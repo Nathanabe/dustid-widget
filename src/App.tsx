@@ -1,1 +1,0 @@
-// This file is now empty. The DustidWidget component has been moved to DustidWidget.tsx for embeddable use.

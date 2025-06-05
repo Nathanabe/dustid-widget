@@ -1,35 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+
 export default defineConfig({
   plugins: [react()],
   build: {
     lib: {
       entry: 'src/index.tsx',
       name: 'DustidWidget',
-      // Remove fileName here, set in rollupOptions.output
-      formats: ['umd', 'es']
+      fileName: () => `widget.js`,
+      formats: ['iife'], // 'iife' makes it a global <script> browser-compatible file
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
-      output: [
-        {
-          format: 'umd',
-          entryFileNames: 'dustid-widget.umd.js',
-          name: 'DustidWidget',
-          globals: {
-            react: 'React',
-            'react-dom': 'ReactDOM'
-          }
+      output: {
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
         },
-        {
-          format: 'es',
-          entryFileNames: 'dustid-widget.js'
-        }
-      ]
-    }
+      },
+      external: ['react', 'react-dom'], // avoids bundling React (optional)
+    },
   },
-  define: {
-    'process.env.NODE_ENV': JSON.stringify('production')
-  }
 })
