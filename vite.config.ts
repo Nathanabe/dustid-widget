@@ -13,12 +13,8 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-        },
+      
       },
-      external: ['react', 'react-dom'], // avoids bundling React (optional)
     },
   },
 })
