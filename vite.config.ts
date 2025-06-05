@@ -4,6 +4,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'process.env': {}, // prevents "process is not defined" error
+  },
   build: {
     lib: {
       entry: 'src/index.tsx',
