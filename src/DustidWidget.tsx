@@ -1,5 +1,5 @@
 "use client";
-
+import './widget.css'
 import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import type { MutableRefObject } from "react";
