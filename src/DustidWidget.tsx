@@ -208,39 +208,41 @@ export function DustidWidget({
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+    <div className="w-full rounded-lg shadow-lg ">
       {stage === "banner" && (
         <div
           onClick={() => setStage("signup")}
-          className="cursor-pointer p-6 bg-[#D5BEFF]"
+          className="cursor-pointer p-2 bg-[#D5BEFF]"
         >
           <div className="flex items-center justify-center gap-4 text-center lg:text-left">
-            <span className="text-lg lg:text-xl font-medium">
-              Gifts for a friend? Click here to get powered by
-            </span>
-            <img src="./dustid.svg" />
+            <p className="text-[10px] lg:text-sm ">
+              Gifts for a friend?{" "}
+              <span className="text-[#2B84A4]">Click here</span> to get powered
+              by
+            </p>
+            <img className="w-[5em]" src="./dustid.svg" />
           </div>
         </div>
       )}
 
       {stage === "signup" && (
-        <div className="p-6 bg-[#D5BEFF]">
+        <div className="p-2 bg-[#D5BEFF]">
           {/* Large screen layout */}
           <div className="hidden lg:flex items-center justify-between gap-6">
             <button
               onClick={goBack}
               className="p-2 hover:bg-gray-100  rounded-full"
             >
-              <ArrowLeft className="w-5 h-5  " color="black" />
+              <ArrowLeft className="w-4 h-4  " color="black" />
             </button>
 
-            <h2 className="text-xl font-semibold text-black">Sign in</h2>
+            <h2 className="text-sm font-semibold text-black">Sign in</h2>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 ">
               <select
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="px-3 py-2 border-white block bg-white rounded-md focus:outline-none"
+                className="p-1.5 border-white block bg-white rounded-md focus:outline-none"
               >
                 {countries.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -250,7 +252,7 @@ export function DustidWidget({
               </select>
 
               <div className="flex">
-                <span className="inline-flex items-center px-3 py-2 rounded-l-md border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm">
+                <span className="inline-flex items-center px-1.5 rounded-l-md bg-white text-sm border-r border-gray-200">
                   {getSelectedCountry()?.dialCode}
                 </span>
                 <input
@@ -261,13 +263,13 @@ export function DustidWidget({
                     setPhoneError("");
                   }}
                   placeholder="Enter phone number"
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="p-1.5 bg-white rounded-br-md rounded-tr-md focus:outline-none"
                 />
               </div>
 
               <button
                 onClick={handleSignup}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
+                className="bg-[#54358C]  text-white font-medium py-2 px-6 rounded-md transition-colors"
               >
                 Sign in
               </button>
@@ -354,190 +356,174 @@ export function DustidWidget({
       )}
 
       {stage === "otp" && (
-        <div className="p-6 space-y-6 bg-[#D5BEFF]">
-          <div className="flex items-center justify-between">
+        <div className="p-2 bg-[#D5BEFF]">
+          <div className="md:flex items-center justify-between">
             <button onClick={goBack} className="p-2  rounded-full">
               <ArrowLeft className="w-5 h-5" />
             </button>
+            <div></div>
+            <p className="text-sm mb-2">
+              We've sent an SMS with a verification code to your phone at{" "}
+              <span className="font-semibold">
+                {getSelectedCountry()?.dialCode} {phoneNumber}
+              </span>
+            </p>
+
+            <form
+              onSubmit={handleVerify}
+              className="flex justify-between"
+            >
+              <div className="flex gap-1 justify-center mr-4">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => {
+                      otpRefs.current[index] = el;
+                    }}
+                    type="text"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    className="w-6 h-8 text-center text-lg font-semibold  bg-white rounded-3xl focus:outline-none"
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-4 justify-center">
+                <button
+                  type="submit"
+                  className="bg-[#54358C] text-white font-medium p-2 rounded-md transition-colors"
+                >
+                  Verify
+                </button>
+
+                {resendCountdown > 0 ? (
+                  <p className="text-gray-600 dark:text-gray-400 py-2">
+                    Resend in {resendCountdown}s
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    className="text-blue-600 hover:text-blue-700 font-medium py-2 px-4 transition-colors"
+                  >
+                    Resend
+                  </button>
+                )}
+              </div>
+            </form>
             <button
               onClick={closeWidget}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full hidden md:visible"
             >
               <X className="w-5 h-5 " />
             </button>
           </div>
-
-          <div className="space-y-4">
-            <p>
-              We've sent an SMS with a verification code to your phone at
-              <span className="font-semibold  block">
-                {getSelectedCountry()?.dialCode} {phoneNumber}
-              </span>
-            </p>
-          </div>
-
-          <form onSubmit={handleVerify} className="space-y-6">
-            <div className="flex gap-2 justify-center">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => {
-                    otpRefs.current[index] = el;
-                  }}
-                  type="text"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-10 h-12 text-center text-lg font-semibold  bg-white rounded-3xl"
-                />
-              ))}
-            </div>
-
-            <div className="flex gap-4 justify-center">
-              <button
-                type="submit"
-                className="bg-[#54358C] text-white font-medium py-2 px-6 rounded-md transition-colors"
-              >
-                Verify
-              </button>
-
-              {resendCountdown > 0 ? (
-                <p className="text-gray-600 dark:text-gray-400 py-2">
-                  Resend in {resendCountdown}s
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleResendCode}
-                  className="text-blue-600 hover:text-blue-700 font-medium py-2 px-4 transition-colors"
-                >
-                  Resend
-                </button>
-              )}
-            </div>
-          </form>
         </div>
       )}
 
       {stage === "welcome" && (
-        <div className="p-6 space-y-6 bg-[#D5BEFF]">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold ">Welcome {userName}!</h2>
+        <div className="p-4 md:py-2 md:px-[10em] bg-[#D5BEFF] ">
+          <div className="w-full sm:w-[80%] m-auto flex items-center justify-between">
+            <div className='w-full'>
+              <h2 className=" mb-2 md:text-base font-bold ">Welcome {userName}!</h2>
+              <div className="relative md:w-[50%]">
+                <input
+                  type="text"
+                  placeholder="Search contacts..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={handleSearchFocus}
+                  className="w-full p-1 bg-white rounded-md"
+                />
+
+                {showDropdown && filteredContacts.length > 0 && (
+                  <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {filteredContacts.map((contact) => (
+                      <li
+                        key={contact.id}
+                        onClick={() => handleContactSelect(contact)}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors duration-150"
+                      >
+                        <img
+                          src={contact.avatar || "/placeholder.svg"}
+                          alt={contact.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                        <span className="font-medium">{contact.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+
             <button
               onClick={closeWidget}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
             >
               <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
-          </div>
-
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search contacts..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              onFocus={handleSearchFocus}
-              className="w-full px-4 py-3 bg-white rounded-md"
-            />
-
-            {showDropdown && filteredContacts.length > 0 && (
-              <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                {filteredContacts.map((contact) => (
-                  <li
-                    key={contact.id}
-                    onClick={() => handleContactSelect(contact)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors duration-150"
-                  >
-                    <img
-                      src={contact.avatar || "/placeholder.svg"}
-                      alt={contact.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <span className="font-medium">{contact.name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         </div>
       )}
 
       {stage === "contactSelected" && selectedContact && (
-        <div className="p-6 space-y-6 bg-[#D5BEFF]">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Welcome {userName}!</h2>
-            <button
-              onClick={closeWidget}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+        <div className="p-2 bg-[#D5BEFF]">
+          <div className="items-center justify-between w-full m-auto sm:w-[50%] sm:flex">
+            <h2 className="text-base font-bold mb-3">Welcome {userName}!</h2>
 
-          <div className="flex items-center gap-4 p-4 bg-[#54358C] rounded-lg">
-            <img
-              src={selectedContact.avatar || "/placeholder.svg"}
-              alt={selectedContact.name}
-              className="w-16 h-16 rounded-full object-cover"
-            />
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-amber-50">
-                {selectedContact.name}
-              </h3>
-              <div className="flex items-center gap-2 text-amber-50">
-                <Calendar className="w-4 h-4" />
-                <span>{selectedContact.date}</span>
+            <div className="flex border md:flex-row md:w-2/3 justify-between">
+              <div className="flex items-center gap-4 p-2 bg-[#54358C] rounded-md w-[60%] ">
+                <img
+                  src={selectedContact.avatar || "/placeholder.svg"}
+                  alt={selectedContact.name}
+                  className="w-7 h-7 rounded-xl block object-cover"
+                />
+                <div className="flex justify-between ">
+                  <h3 className="text-sm  text-amber-50">
+                    {selectedContact.name}
+                  </h3>
+                  <div className="flex items-center text-amber-50 text-xs ml-2">
+                    <Calendar className="w-2 h-2" />
+                    <span className="ml-1">{selectedContact.date}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-[38%]">
+                <button
+                  onClick={() => setStage("shopping")}
+                  className=" bg-[#54358C] text-xs  text-white px-4 rounded-md transition-colors w-full py-1 mb-2"
+                >
+                  Send to contact
+                </button>
+                <button
+                  onClick={() => setStage("welcome")}
+                  className="flex border p-1 text-xs rounded-md transition-colors w-full px-7"
+                >
+                  Change contact
+                </button>
               </div>
             </div>
-          </div>
-
-          <div className="flex gap-4">
-            <button
-              onClick={() => setStage("welcome")}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-900 dark:text-white font-medium py-3 px-4 rounded-md transition-colors"
-            >
-              Change contact
-            </button>
-            <button
-              onClick={() => setStage("shopping")}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors"
-            >
-              Send to contact
-            </button>
           </div>
         </div>
       )}
 
       {stage === "shopping" && selectedContact && (
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div></div>
-            <button
-              onClick={closeWidget}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-            >
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
-          </div>
+        <div className="p-2 bg-[#D5BEFF] ">
+          <div className="flex items-center justify-between  m-auto place-content-center align-middle sm:w-[50%] ">
+            <div onClick={() => setStage("contactSelected")} className="flex">
+              <img
+                src={selectedContact.avatar || "/placeholder.svg"}
+                alt={selectedContact.name}
+                className="w-7 h-7 rounded-md object-cover border"
+              />
 
-          <div
-            onClick={() => setStage("contactSelected")}
-            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-          >
-            <img
-              src={selectedContact.avatar || "/placeholder.svg"}
-              alt={selectedContact.name}
-              className="w-16 h-16 rounded-full object-cover"
-            />
-            <div>
-              <p className="text-gray-600 dark:text-gray-400">
-                You are currently shopping for
+              <p className="text-xs ml-4 sm:text-base">
+                You are currently shopping for{" "}
+                <span className="font-bold "> {selectedContact.name}*</span>
               </p>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {selectedContact.name}
-              </h3>
             </div>
           </div>
         </div>
