@@ -212,42 +212,35 @@ export function DustidWidget({
       {stage === "banner" && (
         <div
           onClick={() => setStage("signup")}
-          className="cursor-pointer p-6 lg:p-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+          className="cursor-pointer p-6 bg-[#D5BEFF]"
         >
           <div className="flex items-center justify-center gap-4 text-center lg:text-left">
             <span className="text-lg lg:text-xl font-medium">
               Gifts for a friend? Click here to get powered by
             </span>
-            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-md">
-              <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-                <span className="text-blue-600 font-bold text-sm">D</span>
-              </div>
-              <span className="font-semibold">DustID</span>
-            </div>
+            <img src="./dustid.svg" />
           </div>
         </div>
       )}
 
       {stage === "signup" && (
-        <div className="p-6">
+        <div className="p-6 bg-[#D5BEFF]">
           {/* Large screen layout */}
           <div className="hidden lg:flex items-center justify-between gap-6">
             <button
               onClick={goBack}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+              className="p-2 hover:bg-gray-100  rounded-full"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <ArrowLeft className="w-5 h-5  " color="black" />
             </button>
 
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Sign in
-            </h2>
+            <h2 className="text-xl font-semibold text-black">Sign in</h2>
 
             <div className="flex items-center gap-4">
               <select
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="px-3 py-2 border-white block bg-white rounded-md focus:outline-none"
               >
                 {countries.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -293,57 +286,65 @@ export function DustidWidget({
             <div className="flex items-center justify-between">
               <button
                 onClick={goBack}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                className="p-2 hover:bg-gray-100  rounded-full"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <ArrowLeft className="w-5 h-5 " />
               </button>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Sign in
-              </h2>
-              <button
-                onClick={closeWidget}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-              >
-                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              </button>
+              <div>
+                <button
+                  onClick={closeWidget}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                >
+                  <X className="w-5 h-5 " />
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSignup} className="space-y-4">
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                {countries.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.flag} {c.name}
-                  </option>
-                ))}
-              </select>
+            <form
+              onSubmit={handleSignup}
+              className="space-y-4 flex justify-between"
+            >
+              <div className=" w-[90%]">
+                <h2 className="text-xl font-semibold text-gray-900">Sign in</h2>
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md mb-2"
+                >
+                  {countries.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      <span className="inline-block border-r-2 border-r-black">
+                        {c.flag}
+                      </span>{" "}
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
 
-              <div className="flex">
-                <span className="inline-flex items-center px-3 py-2 rounded-l-md border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm">
-                  {getSelectedCountry()?.dialCode}
-                </span>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => {
-                    setPhoneNumber(e.target.value);
-                    setPhoneError("");
-                  }}
-                  placeholder="Enter phone number"
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                />
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 py-2 rounded-l-md  text-sm bg-white">
+                    {getSelectedCountry()?.dialCode}
+                  </span>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      setPhoneNumber(e.target.value);
+                      setPhoneError("");
+                    }}
+                    placeholder="Enter phone number"
+                    className="flex-1 px-3 py-2  rounded-r-md bg-white border-l border-gray-400"
+                  />
+                </div>
+
+                {phoneError && (
+                  <p className="text-red-500 text-sm">{phoneError}</p>
+                )}
               </div>
-
-              {phoneError && (
-                <p className="text-red-500 text-sm">{phoneError}</p>
-              )}
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                className="w-[40%] ml-3.5 h-[20%] relative bottom-[-4.7em] bg-[#54358C] cursor-pointer text-white font-medium py-2 px-4 rounded-md transition-colors"
               >
                 Sign in
               </button>
@@ -353,28 +354,25 @@ export function DustidWidget({
       )}
 
       {stage === "otp" && (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 bg-[#D5BEFF]">
           <div className="flex items-center justify-between">
-            <button
-              onClick={goBack}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <button onClick={goBack} className="p-2  rounded-full">
+              <ArrowLeft className="w-5 h-5" />
             </button>
             <button
               onClick={closeWidget}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
             >
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <X className="w-5 h-5 " />
             </button>
           </div>
 
-          <div className="text-center space-y-4">
-            <p className="text-gray-600 dark:text-gray-400">
+          <div className="space-y-4">
+            <p>
               We've sent an SMS with a verification code to your phone at
-            </p>
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {getSelectedCountry()?.dialCode} {phoneNumber}
+              <span className="font-semibold  block">
+                {getSelectedCountry()?.dialCode} {phoneNumber}
+              </span>
             </p>
           </div>
 
@@ -391,7 +389,7 @@ export function DustidWidget({
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-10 h-12 text-center text-lg font-semibold  bg-white rounded-3xl"
                 />
               ))}
             </div>
@@ -399,7 +397,7 @@ export function DustidWidget({
             <div className="flex gap-4 justify-center">
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
+                className="bg-[#54358C] text-white font-medium py-2 px-6 rounded-md transition-colors"
               >
                 Verify
               </button>
@@ -423,11 +421,9 @@ export function DustidWidget({
       )}
 
       {stage === "welcome" && (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 bg-[#D5BEFF]">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Welcome {userName}!
-            </h2>
+            <h2 className="text-2xl font-bold ">Welcome {userName}!</h2>
             <button
               onClick={closeWidget}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
@@ -443,11 +439,11 @@ export function DustidWidget({
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={handleSearchFocus}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 bg-white rounded-md"
             />
 
             {showDropdown && filteredContacts.length > 0 && (
-              <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+              <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
                 {filteredContacts.map((contact) => (
                   <li
                     key={contact.id}
@@ -459,9 +455,7 @@ export function DustidWidget({
                       alt={contact.name}
                       className="w-10 h-10 rounded-full object-cover"
                     />
-                    <span className="text-gray-900 dark:text-white font-medium">
-                      {contact.name}
-                    </span>
+                    <span className="font-medium">{contact.name}</span>
                   </li>
                 ))}
               </ul>
@@ -471,30 +465,28 @@ export function DustidWidget({
       )}
 
       {stage === "contactSelected" && selectedContact && (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 bg-[#D5BEFF]">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Welcome {userName}!
-            </h2>
+            <h2 className="text-2xl font-bold">Welcome {userName}!</h2>
             <button
               onClick={closeWidget}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
             >
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="flex items-center gap-4 p-4 bg-[#54358C] rounded-lg">
             <img
               src={selectedContact.avatar || "/placeholder.svg"}
               alt={selectedContact.name}
               className="w-16 h-16 rounded-full object-cover"
             />
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-semibold text-amber-50">
                 {selectedContact.name}
               </h3>
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2 text-amber-50">
                 <Calendar className="w-4 h-4" />
                 <span>{selectedContact.date}</span>
               </div>
