@@ -1,5 +1,5 @@
 "use client";
-
+import './widget.css'
 import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import type { MutableRefObject } from "react";
@@ -123,7 +123,7 @@ export function DustidWidget({
     }
   };
 
-  const handleSignup = (e: { preventDefault: () => void }) => {
+  const handleSignup = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     if (validatePhoneNumber(phoneNumber)) {
       setStage("otp");
@@ -208,38 +208,39 @@ export function DustidWidget({
   };
 
   return (
-    <div className="dustid-widget">
+    <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
       {stage === "banner" && (
-        <div onClick={() => setStage("signup")} className="banner">
-          <div className="banner-content">
-            <span className="banner-text">
+        <div
+          onClick={() => setStage("signup")}
+          className="cursor-pointer p-6 bg-[#D5BEFF]"
+        >
+          <div className="flex items-center justify-center gap-4 text-center lg:text-left">
+            <span className="text-lg lg:text-xl font-medium">
               Gifts for a friend? Click here to get powered by
             </span>
-            <div className="dustid-logo">
-              <div className="logo-icon">
-                <span>D</span>
-              </div>
-              <span className="logo-text">DustID</span>
-            </div>
+            <img src="./dustid.svg" />
           </div>
         </div>
       )}
 
       {stage === "signup" && (
-        <div className="signup">
+        <div className="p-6 bg-[#D5BEFF]">
           {/* Large screen layout */}
-          <div className="signup-desktop">
-            <button onClick={goBack} className="icon-button">
-              <ArrowLeft className="w-5 h-5" color="black" />
+          <div className="hidden lg:flex items-center justify-between gap-6">
+            <button
+              onClick={goBack}
+              className="p-2 hover:bg-gray-100  rounded-full"
+            >
+              <ArrowLeft className="w-5 h-5  " color="black" />
             </button>
 
-            <h2 className="signup-title">Sign in</h2>
+            <h2 className="text-xl font-semibold text-black">Sign in</h2>
 
-            <div className="desktop-inputs">
+            <div className="flex items-center gap-4">
               <select
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="country-select"
+                className="px-3 py-2 border-white block bg-white rounded-md focus:outline-none"
               >
                 {countries.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -248,8 +249,8 @@ export function DustidWidget({
                 ))}
               </select>
 
-              <div className="phone-input-container">
-                <span className="country-code">
+              <div className="flex">
+                <span className="inline-flex items-center px-3 py-2 rounded-l-md border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm">
                   {getSelectedCountry()?.dialCode}
                 </span>
                 <input
@@ -260,50 +261,68 @@ export function DustidWidget({
                     setPhoneError("");
                   }}
                   placeholder="Enter phone number"
-                  className="phone-input"
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
-              <button onClick={handleSignup} className="desktop-button">
+              <button
+                onClick={handleSignup}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
+              >
                 Sign in
               </button>
             </div>
 
-            <button onClick={closeWidget} className="icon-button">
-              <X className="w-5 h-5" />
+            <button
+              onClick={closeWidget}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+            >
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
           {/* Mobile layout */}
-          <div className="signup-mobile">
-            <div className="signup-header">
-              <button onClick={goBack} className="icon-button">
-                <ArrowLeft className="w-5 h-5" />
+          <div className="lg:hidden space-y-4">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={goBack}
+                className="p-2 hover:bg-gray-100  rounded-full"
+              >
+                <ArrowLeft className="w-5 h-5 " />
               </button>
               <div>
-                <button onClick={closeWidget} className="icon-button">
-                  <X className="w-5 h-5" />
+                <button
+                  onClick={closeWidget}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                >
+                  <X className="w-5 h-5 " />
                 </button>
               </div>
             </div>
 
-            <form onSubmit={handleSignup} className="signup-form">
-              <div className="signup-form-fields">
-                <h2 className="signup-title">Sign in</h2>
+            <form
+              onSubmit={handleSignup}
+              className="space-y-4 flex justify-between"
+            >
+              <div className=" w-[90%]">
+                <h2 className="text-xl font-semibold text-gray-900">Sign in</h2>
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="country-select"
+                  className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md mb-2"
                 >
                   {countries.map((c) => (
                     <option key={c.code} value={c.code}>
-                      {c.flag} {c.name}
+                      <span className="inline-block border-r-2 border-r-black">
+                        {c.flag}
+                      </span>{" "}
+                      {c.name}
                     </option>
                   ))}
                 </select>
 
-                <div className="phone-input-container">
-                  <span className="country-code">
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 py-2 rounded-l-md  text-sm bg-white">
                     {getSelectedCountry()?.dialCode}
                   </span>
                   <input
@@ -314,14 +333,19 @@ export function DustidWidget({
                       setPhoneError("");
                     }}
                     placeholder="Enter phone number"
-                    className="phone-input"
+                    className="flex-1 px-3 py-2  rounded-r-md bg-white border-l border-gray-400"
                   />
                 </div>
 
-                {phoneError && <p className="phone-error">{phoneError}</p>}
+                {phoneError && (
+                  <p className="text-red-500 text-sm">{phoneError}</p>
+                )}
               </div>
 
-              <button type="submit" className="signup-button">
+              <button
+                type="submit"
+                className="w-[40%] ml-3.5 h-[20%] relative bottom-[-4.7em] bg-[#54358C] cursor-pointer text-white font-medium py-2 px-4 rounded-md transition-colors"
+              >
                 Sign in
               </button>
             </form>
@@ -330,27 +354,30 @@ export function DustidWidget({
       )}
 
       {stage === "otp" && (
-        <div className="otp">
-          <div className="otp-header">
-            <button onClick={goBack} className="icon-button">
+        <div className="p-6 space-y-6 bg-[#D5BEFF]">
+          <div className="flex items-center justify-between">
+            <button onClick={goBack} className="p-2  rounded-full">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <button onClick={closeWidget} className="icon-button">
-              <X className="w-5 h-5" />
+            <button
+              onClick={closeWidget}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+            >
+              <X className="w-5 h-5 " />
             </button>
           </div>
 
-          <div className="otp-message">
+          <div className="space-y-4">
             <p>
               We've sent an SMS with a verification code to your phone at
-              <span className="otp-phone">
+              <span className="font-semibold  block">
                 {getSelectedCountry()?.dialCode} {phoneNumber}
               </span>
             </p>
           </div>
 
-          <form onSubmit={handleVerify}>
-            <div className="otp-inputs">
+          <form onSubmit={handleVerify} className="space-y-6">
+            <div className="flex gap-2 justify-center">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -362,23 +389,28 @@ export function DustidWidget({
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="otp-input"
+                  className="w-10 h-12 text-center text-lg font-semibold  bg-white rounded-3xl"
                 />
               ))}
             </div>
 
-            <div className="otp-actions">
-              <button type="submit" className="verify-button">
+            <div className="flex gap-4 justify-center">
+              <button
+                type="submit"
+                className="bg-[#54358C] text-white font-medium py-2 px-6 rounded-md transition-colors"
+              >
                 Verify
               </button>
 
               {resendCountdown > 0 ? (
-                <p className="resend-timer">Resend in {resendCountdown}s</p>
+                <p className="text-gray-600 dark:text-gray-400 py-2">
+                  Resend in {resendCountdown}s
+                </p>
               ) : (
                 <button
                   type="button"
                   onClick={handleResendCode}
-                  className="resend-button"
+                  className="text-blue-600 hover:text-blue-700 font-medium py-2 px-4 transition-colors"
                 >
                   Resend
                 </button>
@@ -389,38 +421,41 @@ export function DustidWidget({
       )}
 
       {stage === "welcome" && (
-        <div className="welcome">
-          <div className="welcome-header">
-            <h2 className="welcome-title">Welcome {userName}!</h2>
-            <button onClick={closeWidget} className="icon-button">
-              <X className="w-5 h-5" />
+        <div className="p-6 space-y-6 bg-[#D5BEFF]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold ">Welcome {userName}!</h2>
+            <button
+              onClick={closeWidget}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+            >
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
-          <div className="search-container">
+          <div className="relative">
             <input
               type="text"
               placeholder="Search contacts..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={handleSearchFocus}
-              className="search-input"
+              className="w-full px-4 py-3 bg-white rounded-md"
             />
 
             {showDropdown && filteredContacts.length > 0 && (
-              <ul className="contacts-dropdown">
+              <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
                 {filteredContacts.map((contact) => (
                   <li
                     key={contact.id}
                     onClick={() => handleContactSelect(contact)}
-                    className="contact-item"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors duration-150"
                   >
                     <img
                       src={contact.avatar || "/placeholder.svg"}
                       alt={contact.name}
-                      className="contact-avatar"
+                      className="w-10 h-10 rounded-full object-cover"
                     />
-                    <span className="contact-name">{contact.name}</span>
+                    <span className="font-medium">{contact.name}</span>
                   </li>
                 ))}
               </ul>
@@ -430,39 +465,44 @@ export function DustidWidget({
       )}
 
       {stage === "contactSelected" && selectedContact && (
-        <div className="contact-selected">
-          <div className="welcome-header">
-            <h2 className="welcome-title">Welcome {userName}!</h2>
-            <button onClick={closeWidget} className="icon-button">
+        <div className="p-6 space-y-6 bg-[#D5BEFF]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Welcome {userName}!</h2>
+            <button
+              onClick={closeWidget}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="contact-card">
+          <div className="flex items-center gap-4 p-4 bg-[#54358C] rounded-lg">
             <img
               src={selectedContact.avatar || "/placeholder.svg"}
               alt={selectedContact.name}
-              className="contact-avatar-large"
+              className="w-16 h-16 rounded-full object-cover"
             />
-            <div className="contact-info">
-              <h3 className="contact-name-large">{selectedContact.name}</h3>
-              <div className="contact-date">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-amber-50">
+                {selectedContact.name}
+              </h3>
+              <div className="flex items-center gap-2 text-amber-50">
                 <Calendar className="w-4 h-4" />
                 <span>{selectedContact.date}</span>
               </div>
             </div>
           </div>
 
-          <div className="contact-actions">
+          <div className="flex gap-4">
             <button
               onClick={() => setStage("welcome")}
-              className="change-button"
+              className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-900 dark:text-white font-medium py-3 px-4 rounded-md transition-colors"
             >
               Change contact
             </button>
             <button
               onClick={() => setStage("shopping")}
-              className="send-button"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors"
             >
               Send to contact
             </button>
@@ -471,26 +511,33 @@ export function DustidWidget({
       )}
 
       {stage === "shopping" && selectedContact && (
-        <div className="shopping">
-          <div className="shopping-header">
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
             <div></div>
-            <button onClick={closeWidget} className="icon-button">
-              <X className="w-5 h-5" />
+            <button
+              onClick={closeWidget}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+            >
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
           <div
             onClick={() => setStage("contactSelected")}
-            className="shopping-card"
+            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
           >
             <img
               src={selectedContact.avatar || "/placeholder.svg"}
               alt={selectedContact.name}
-              className="contact-avatar-large"
+              className="w-16 h-16 rounded-full object-cover"
             />
-            <div className="shopping-info">
-              <p>You are currently shopping for</p>
-              <h3>{selectedContact.name}</h3>
+            <div>
+              <p className="text-gray-600 dark:text-gray-400">
+                You are currently shopping for
+              </p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {selectedContact.name}
+              </h3>
             </div>
           </div>
         </div>
