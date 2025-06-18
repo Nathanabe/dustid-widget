@@ -1,8 +1,7 @@
-
-import './widget.css'
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { DustidWidget } from './DustidWidget'; // Import your component
+import DustidWidget from './DustidWidget';
+// Import your component
 
 // This part ensures React is available globally if needed by other scripts,
 // though for a bundled component, it's usually encapsulated.
