@@ -1,4 +1,4 @@
-export const getContacts = (req, res) => {
+export const getContacts = (req:Request, res:Response) => {
   const mockContacts = [
     { id: 1, name: "Amy Scholfield", avatar: "/placeholder.svg", date: "17 May" },
     { id: 2, name: "David Ochieng", avatar: "/placeholder.svg", date: "15 May" },
@@ -7,6 +7,6 @@ export const getContacts = (req, res) => {
     { id: 5, name: "Sarah Kimani", avatar: "/placeholder.svg", date: "8 May" },
   ];
 
-  res.json({ contacts: mockContacts });
+  return ({ contacts: mockContacts });
 };
 

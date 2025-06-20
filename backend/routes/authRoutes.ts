@@ -1,5 +1,6 @@
 import express from 'express';
-import { requestOtp, validateOtp } from '../controllers/authController.js';
+import { requestOtp, validateOtp } from '../controllers/authController';
+
 
 const router = express.Router();
 

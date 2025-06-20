@@ -24,3 +24,11 @@ export type Stage =
 export interface DustidWidgetProps {
   userName?: string;
 }
+
+export interface StageProps {
+  onNext?: () => void;
+  onBack?: () => void;
+  onClose?: () => void;
+  data?: any;
+  onDataChange?: (data: any) => void;
+}
