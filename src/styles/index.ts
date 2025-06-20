@@ -11,7 +11,7 @@ export const styles = {
     padding: "1em",
     backgroundColor: "#e9d5ff",
     borderRadius: "8px",
-    border: "2px solid red",
+    // border: "2px solid red",
   } as React.CSSProperties,
 
   iconButton: {

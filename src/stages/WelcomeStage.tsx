@@ -87,7 +87,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
           backgroundColor: "white",
           borderRadius: "6px",
           alignItems: "center",
-          padding: ".5em",
+          padding: "10px",
         }}
       >
         <Search

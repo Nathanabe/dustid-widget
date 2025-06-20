@@ -117,7 +117,6 @@ const ContactSelectedStage: React.FC<ContactSelectedStageProps> = ({
                 fontSize: "12px",
                 padding: "6px 8px",
                 height: "50%",
-
                 backgroundColor: "#54358C",
                 borderRadius: "6px",
               }}
@@ -164,9 +163,8 @@ const ContactSelectedStage: React.FC<ContactSelectedStageProps> = ({
               backgroundColor: "#7c3aed",
               borderRadius: "6px",
               color: "white",
-
-              padding: "0 10px ",
-              width: "40%",
+              padding: "10px 16px",
+              width: "70%",
             }}
           >
             <img

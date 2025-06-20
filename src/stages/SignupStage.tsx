@@ -121,7 +121,7 @@ const SignupStage: React.FC<SignupStageProps> = ({
               fontSize: "20px",
               fontWeight: "600",
               color: "black",
-              marginBottom: "16px",
+              marginBottom: "10px",
             }}
           >
             Sign in
@@ -135,7 +135,7 @@ const SignupStage: React.FC<SignupStageProps> = ({
                   ...styles.select,
                   width: "100%",
                   marginBottom: "8px",
-                  padding: "1em",
+                  padding: "10px",
                 }}
               >
                 {COUNTRIES.map((country) => (
@@ -175,7 +175,7 @@ const SignupStage: React.FC<SignupStageProps> = ({
                       borderRadius: "0 6px 6px 0",
                       flex: 1,
 
-                      padding: "1em",
+                      padding: "10px",
                     }}
                   />
                 </div>
@@ -201,14 +201,13 @@ const SignupStage: React.FC<SignupStageProps> = ({
               style={{
                 width: "33%",
                 marginTop: "auto",
-              
-                marginBottom:"1.4em"
+                marginBottom:"20px"
               }}
             >
               <button
                 onClick={handleSignup}
                 disabled={isLoading}
-                style={{ ...styles.button("primary", isLoading), padding:".8em .6em"}}
+                style={{ ...styles.button("primary", isLoading), padding:"10px 10px"}}
               >
                 {isLoading ? "Signing in..." : "Sign in"}
               </button>
