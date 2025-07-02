@@ -31,11 +31,11 @@ const BannerStage: React.FC<BannerStageProps> = ({ onNext }) => {
           textAlign: "center",
         }}
       >
-        <p style={{ fontSize: "14px" }}>
+        <p style={{ fontSize: "10px" }}>
           Gifts for a friend?{" "}
           <span style={{ color: "#2563eb" }}>Click here</span> to get powered by
         </p>
-        <img src="https://dustid-widget-new.vercel.app/dustid.svg" />
+        <img src="https://dustid-widget-new.vercel.app/dustid.svg" width={81} height={12} />
       </div>
     </div>
   );

@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "server.js",
   "license": "MIT",
+  "type": "module",
   "scripts": {
-    "dev": "nodemon --watch './**/*.ts' --exec 'ts-node' server.ts"
+    "dev": "nodemon --watch './**/*.js'  server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

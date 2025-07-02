@@ -8,10 +8,10 @@ export const styles = {
   } as React.CSSProperties,
 
   stage: {
-    padding: "1em",
+    
     backgroundColor: "#e9d5ff",
     borderRadius: "8px",
-    // border: "2px solid red",
+    border: "2px solid red",
   } as React.CSSProperties,
 
   iconButton: {
@@ -50,7 +50,7 @@ export const styles = {
   } as React.CSSProperties,
 
   select: {
-    padding: "6px 12px",
+    padding: "7px 9px",
     border: "1px solid #d1d5db",
     backgroundColor: "white",
     borderRadius: "6px",

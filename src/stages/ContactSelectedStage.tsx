@@ -3,7 +3,7 @@
 import type React from "react";
 import { Calendar } from "lucide-react";
 import type { StageProps, Contact } from "../types";
-import  { styles } from "../styles";
+import { styles } from "../styles";
 import { useResponsive } from "../utils/responsive";
 
 interface ContactSelectedStageProps extends StageProps {
@@ -22,7 +22,7 @@ const ContactSelectedStage: React.FC<ContactSelectedStageProps> = ({
 
   if (isMobile) {
     return (
-      <div style={styles.stage}>
+      <div style={{ ...styles.stage, padding: "8px" }}>
         <h2
           style={{
             fontSize: "16px",
@@ -34,17 +34,26 @@ const ContactSelectedStage: React.FC<ContactSelectedStageProps> = ({
           Welcome {data.userName}!
         </h2>
 
-        <div style={{ display: "flex", gap: "8px", alignItems: "stretch" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            alignItems: "stretch",
+          }}
+        >
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: "12px",
-              padding: "8px",
+              padding: "0 8px",
               backgroundColor: "#54358C",
               borderRadius: "6px",
               color: "white",
               flex: 1,
+
+              width: "200px",
+              height: "60px",
             }}
           >
             <img
@@ -61,30 +70,33 @@ const ContactSelectedStage: React.FC<ContactSelectedStageProps> = ({
                 flexShrink: 0,
               }}
             />
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <h3
+            <div>
+              <p
                 style={{
-                  fontSize: "14px",
+                  fontSize: "12px",
                   fontWeight: "500",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
+                  marginTop: "-2px",
                 }}
               >
                 {data.selectedContact.name}
-              </h3>
+              </p>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  fontSize: "12px",
                   color: "white",
+                  marginTop: "-9px",
                 }}
               >
                 <Calendar
                   style={{ width: "8px", height: "8px", marginRight: "4px" }}
                 />
-                <span>{data.selectedContact.date}</span>
+                <span style={{ fontSize: "8px" }}>
+                  {data.selectedContact.date}
+                </span>
               </div>
             </div>
           </div>

@@ -76,10 +76,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
   };
 
   const searchComponent = (
-    <div
-      style={{ position: "relative", width: "100%" }}
-      ref={dropdownRef}
-    >
+    <div style={{ position: "relative", width: "100%" }} ref={dropdownRef}>
       <div
         style={{
           position: "relative",
@@ -87,14 +84,15 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
           backgroundColor: "white",
           borderRadius: "6px",
           alignItems: "center",
-          padding: "10px",
+          border: "1px solid ",
+          padding: "0 3px",
         }}
       >
         <Search
           style={{
-            color: "#9ca3af",
-            width: "24px",
-            height: "24px",
+            color: "#000000",
+            width: "12px",
+            height: "12px",
           }}
         />
         <input
@@ -113,6 +111,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
             border: "none",
             outline: "none",
             padding: ".6em",
+            fontSize: "12px",
           }}
         />
       </div>
@@ -130,7 +129,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
             boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
             maxHeight: "240px",
             overflowY: "auto",
-            // border: "1px solid red",
+            padding: "6px",
           }}
         >
           {isLoading ? (
@@ -153,7 +152,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  padding: "4px",
+                  padding: "8px 4px",
                   cursor: "pointer",
                   transition: "background-color 0.2s",
                 }}
@@ -175,8 +174,18 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
                     objectFit: "cover",
                   }}
                 />
-                <section>
-                  <p style={{ fontSize: "13px", color: "#262626" }}>
+                <section
+                  style={{
+                    alignItems: "center",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#262626",
+                      marginTop: "-1px",
+                    }}
+                  >
                     {contact.name}
                   </p>
                   <div
@@ -185,6 +194,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
                       alignItems: "center",
                       fontSize: "12px",
                       color: "#c4b5fd",
+                      marginTop: "-9px",
                     }}
                   >
                     <Calendar
@@ -192,9 +202,12 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
                         width: "8px",
                         height: "8px",
                         marginRight: "4px",
+                        color: "#262626",
                       }}
                     />
-                    <span>{"17 May"}</span>
+                    <span style={{ fontSize: "8px", color: "#262626" }}>
+                      {"17 May"}
+                    </span>
                   </div>
                 </section>
               </div>
@@ -224,14 +237,14 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "16px",
+            marginBottom: "6px",
           }}
         >
           <h2 style={{ fontSize: "16px", fontWeight: "bold" }}>
             Welcome {data.userName}!
           </h2>
           <button onClick={onClose} style={styles.iconButton}>
-            <X style={{ width: "20px", height: "20px", color: "#6b7280" }} />
+            <X style={{ width: "16px", height: "16px", color: "#6b7280" }} />
           </button>
         </div>
         {searchComponent}
@@ -259,7 +272,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-          
+
             width: "60%",
             margin: "auto",
           }}

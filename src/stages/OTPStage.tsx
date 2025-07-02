@@ -5,10 +5,9 @@ import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import type { StageProps } from "../types";
 import { COUNTRIES } from "../constants/countries";
-import{ styles } from "../styles";
+import { styles } from "../styles";
 import { apiService } from "../utils/api";
 import { useResponsive } from "../utils/responsive";
-
 
 interface OTPStageProps extends StageProps {
   data: {
@@ -103,7 +102,6 @@ const OTPStage: React.FC<OTPStageProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "16px",
           }}
         >
           <button onClick={onBack} style={styles.iconButton}>
@@ -113,59 +111,67 @@ const OTPStage: React.FC<OTPStageProps> = ({
             <X style={{ width: "20px", height: "20px", color: "#6b7280" }} />
           </button>
         </div>
+        <div style={{ padding: "0 10px" }}>
+          <p style={{ fontSize: "12px", marginBottom: "6px" }}>
+            We've sent an SMS with a verification code to your phone at{" "}
+            <span style={{ fontWeight: "600", display: "block" }}>
+              {selectedCountry?.dialCode} {data.phoneNumber}
+            </span>
+          </p>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
+              justifyContent: "space-between",
+            
+              marginBottom: "10px",
+            }}
+          >
+            <div style={{ display: "flex", gap: "4px" }}>
+              {data.otp.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => {
+                    otpRefs.current[index] = el;
+                  }}
+                  type="number"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  style={{
+                    width: "20px",
+                    height: "28px",
+                    textAlign: "center",
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    backgroundColor: "white",
+                    borderRadius: "50%",
+                    border: "1px solid #d1d5db",
+                    outline: "none",
+                  }}
+                />
+              ))}
+            </div>
 
-        <p style={{ fontSize: "14px", marginBottom: "16px" }}>
-          We've sent an SMS with a verification code to your phone at{" "}
-          <span style={{ fontWeight: "600" }}>
-            {selectedCountry?.dialCode} {data.phoneNumber}
-          </span>
-        </p>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", gap: "4px" }}>
-            {data.otp.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => {
-                  otpRefs.current[index] = el;
-                }}
-                type="text"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleOtpChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <button
+                onClick={handleVerify}
+                disabled={isLoading}
                 style={{
-                  width: "24px",
-                  height: "32px",
-                  textAlign: "center",
-                  fontSize: "18px",
-                  fontWeight: "600",
-                  backgroundColor: "white",
-                  borderRadius: "50%",
-                  border: "1px solid #d1d5db",
-                  outline: "none",
+                  ...styles.button("primary", isLoading),
+                  width: "100px",
+                  height: "28px",
+                  backgroundColor: "#54358C",
+                  fontSize: "14px",
+                  fontWeight:"light"
                 }}
-              />
-            ))}
-          </div>
+              >
+                {isLoading ? "Verifying..." : "Verify"}
+              </button>
 
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <button
-              onClick={handleVerify}
-              disabled={isLoading}
-              style={styles.button("primary", isLoading)}
-            >
-              {isLoading ? "Verifying..." : "Verify"}
-            </button>
-
-            {data.resendCountdown > 0 ? (
+              {/* {data.resendCountdown > 0 ? (
               <p
                 style={{
                   color: "#6b7280",
@@ -182,7 +188,8 @@ const OTPStage: React.FC<OTPStageProps> = ({
               >
                 Resend
               </button>
-            )}
+            )} */}
+            </div>
           </div>
         </div>
       </div>
@@ -198,7 +205,6 @@ const OTPStage: React.FC<OTPStageProps> = ({
           alignItems: "center",
           justifyContent: "space-between",
           gap: "16px",
-          
         }}
       >
         <button onClick={onBack} style={styles.iconButton}>

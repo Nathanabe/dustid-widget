@@ -2,20 +2,39 @@ import type { Contact } from "../types"
 
 export const apiService = {
   async sendOTP(phoneNumber: string, countryCode: string): Promise<{ success: boolean; message: string }> {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000))
+    try {
+      const response = await fetch("http://localhost:3000/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phoneNumber: countryCode+phoneNumber }),
+      });
 
-    // Simulate occasional failures
-    if (Math.random() < 0.1) {
-      throw new Error("Failed to send OTP. Please try again.")
-    }
+      const data = await response.json();
 
-    // Log the parameters for debugging (remove unused parameter warnings)
-    console.log(`Sending OTP to ${phoneNumber} in ${countryCode}`)
-
-    return {
-      success: true,
-      message: "OTP sent successfully",
+      if (response.ok) {
+        // Check if the response status is 2xx
+        return {
+          success: true,
+          message: data.message,
+          // contact: data.contact, // Include the contact data from the backend
+        };
+      } else {
+        // Handle HTTP errors (e.g., 400, 404, 500)
+        return {
+          success: false,
+          message: data.message || "An unexpected error occurred.",
+        };
+      }
+    } catch (error) {
+      // Handle network errors (e.g., server unreachable)
+      console.error("Error verifying contact:", error);
+      return {
+        success: false,
+        message:
+          "Failed to connect to the verification service. Please try again later.",
+      };
     }
   },
 

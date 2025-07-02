@@ -83,8 +83,7 @@ const SignupStage: React.FC<SignupStageProps> = ({
             alignItems: "center",
             justifyContent: "space-between",
             // marginBottom: "10px",
-            // border: "2px solid green",
-
+          
           }}
         >
           <button
@@ -115,7 +114,12 @@ const SignupStage: React.FC<SignupStageProps> = ({
           </button>
         </div>
 
-        <div >
+        <div
+          style={{
+            padding: "0 10px",
+            margin:"0"
+          }}
+        >
           <h2
             style={{
               fontSize: "20px",
@@ -126,16 +130,21 @@ const SignupStage: React.FC<SignupStageProps> = ({
           >
             Sign in
           </h2>
-          <section style={{ display: "flex", justifyContent: "space-between" }}>
-            <section style={{ width: "65%" }}>
+          <section
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+             
+            }}
+          >
+            <section>
               <select
                 value={data.countryCode}
                 onChange={(e) => updateCountryCode(e.target.value)}
                 style={{
                   ...styles.select,
-                  width: "100%",
+                  width: "200px",
                   marginBottom: "8px",
-                  padding: "10px",
                 }}
               >
                 {COUNTRIES.map((country) => (
@@ -148,17 +157,17 @@ const SignupStage: React.FC<SignupStageProps> = ({
                 <div
                   style={{
                     display: "flex",
-                    width: "100%",
+                    width: "200px",
                   }}
                 >
                   <span
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      padding: "6px 12px",
+                      padding: "2px",
                       borderRadius: "6px 0 0 6px",
                       backgroundColor: "white",
-                      fontSize: "14px",
+                      fontSize: "12px",
                       border: "1px solid #d1d5db",
                       borderRight: "1px solid #e5e7eb",
                     }}
@@ -174,8 +183,7 @@ const SignupStage: React.FC<SignupStageProps> = ({
                       ...styles.input,
                       borderRadius: "0 6px 6px 0",
                       flex: 1,
-
-                      padding: "10px",
+                      width: "20px",
                     }}
                   />
                 </div>
@@ -184,7 +192,6 @@ const SignupStage: React.FC<SignupStageProps> = ({
                     data.phoneError
                       ? {
                           visibility: "visible",
-                          border: "2px solid red",
                         }
                       : { padding: "10px" }
                   }
@@ -197,21 +204,21 @@ const SignupStage: React.FC<SignupStageProps> = ({
                 </section>
               </div>
             </section>
-            <section
+
+            <button
+              onClick={handleSignup}
+              disabled={isLoading}
               style={{
-                width: "33%",
+                ...styles.button("primary", isLoading),
+                height: "28px",
+                width: "100px",
                 marginTop: "auto",
-                marginBottom:"20px"
+                padding: "0",
+                marginBottom: "20px",
               }}
             >
-              <button
-                onClick={handleSignup}
-                disabled={isLoading}
-                style={{ ...styles.button("primary", isLoading), padding:"10px 10px"}}
-              >
-                {isLoading ? "Signing in..." : "Sign in"}
-              </button>
-            </section>
+              {isLoading ? "Signing in..." : "Sign in"}
+            </button>
           </section>
         </div>
       </div>
@@ -227,7 +234,7 @@ const SignupStage: React.FC<SignupStageProps> = ({
           justifyContent: "space-between",
           gap: "16px",
           width: "90%",
-          margin:"auto"
+          margin: "auto",
         }}
       >
         <button onClick={onBack} style={styles.iconButton}>

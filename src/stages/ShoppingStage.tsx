@@ -5,7 +5,6 @@ import type { StageProps, Contact } from "../types";
 import { styles } from "../styles";
 import { useResponsive } from "../utils/responsive";
 
-
 interface ShoppingStageProps extends StageProps {
   data: {
     selectedContact: Contact;
@@ -60,7 +59,7 @@ const ShoppingStage: React.FC<ShoppingStageProps> = ({ onBack, data }) => {
           />
         </button>
 
-        <p style={{ fontSize: isMobile ? "14px" : "12px" }}>
+        <p style={{ fontSize: isMobile ? "10px" : "12px" }}>
           You are currently shopping for{" "}
           <span style={{ fontWeight: "bold" }}>
             {data.selectedContact.name}
