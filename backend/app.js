@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -12,45 +14,92 @@ app.use(express.json());
 
 
 
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
 
 // Basic route for home page
 app.get('/', (req, res) => {
     res.status(200).send('Welcome to the Contact Verification API!');
 });
 
-// --- 4. `verify` Endpoint ---
-// This endpoint will receive a phone number and return contact details.
-app.post('/verify', (req, res) => {
-  const phoneNumber = req.body.phoneNumber; // Extract phoneNumber from the request body
-console.log(phoneNumber)
-    // Validate input
-    if (!phoneNumber) {
-        return res.status(400).json({ message: 'Phone number is required.' });
-    }
 
-    // Find the contact in our mock database
-    const foundContact = contactsDB.find(contact => contact.phoneNumber === phoneNumber);
 
-    if (foundContact) {
-        // If contact is found, return their details and friends
-        res.status(200).json({
-            message: 'Contact verified successfully!',
-            contact: {
-                id: foundContact.id,
-                name: foundContact.name,
-                phoneNumber: foundContact.phoneNumber,
-                friends: foundContact.friends
-            }
-        });
-    } else {
-        // If contact is not found
-        res.status(404).json({ message: 'Phone number not found.' });
-    }
+
+app.post("/verify", (req, res) => {
+  const { phoneNumber } = req.body;
+
+  if (!phoneNumber) {
+    return res.status(400).json({ message: "Phone number is required." });
+  }
+
+  const foundContact = contactsDB.find(
+    (contact) => contact.phoneNumber === phoneNumber
+  );
+  if (!foundContact) {
+    return res.status(404).json({ message: "Phone number not found." });
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  console.log(`Generated OTP for ${phoneNumber}: ${otp}`);
+
+  const existing = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
+  if (existing) {
+    existing.otp = otp;
+  } else {
+    otpStore.push({ phoneNumber, otp });
+  }
+
+  return res.status(200).json({ message: "OTP sent successfully." });
+});
+
+
+
+app.post("/validate-otp", (req, res) => {
+  const { phoneNumber, otp } = req.body;
+
+  if (!phoneNumber || !otp) {
+    return res
+      .status(400)
+      .json({ message: "Phone number and OTP are required." });
+  }
+
+  const record = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
+
+  if (record && record.otp === otp) {
+    return res.status(200).json({ message: "OTP validated successfully." });
+  } else {
+    return res.status(401).json({ message: "Invalid OTP." });
+  }
+});
+
+
+app.post("/search", (req, res) => {
+  const { phoneNumber, query } = req.body;
+
+  if (!phoneNumber || !query) {
+    return res
+      .status(400)
+      .json({ message: "Phone number and search query are required." });
+  }
+
+  const contact = contactsDB.find(
+    (contact) => contact.phoneNumber === phoneNumber
+  );
+  if (!contact) {
+    return res.status(404).json({ message: "Contact not found." });
+  }
+
+  const results = contact.friends.filter(
+    (friend) =>
+      friend.name.toLowerCase().includes(query.toLowerCase()) ||
+      friend.email.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return res.status(200).json({ results });
 });
 
 export default app;
 
+const otpStore = []; // [{ phoneNumber, otp }]
 
 const contactsDB = [
   {
