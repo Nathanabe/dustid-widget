@@ -103,7 +103,7 @@ const otpStore = []; // [{ phoneNumber, otp }]
 
 const contactsDB = [
   {
-    id: "contact001",
+    id: "Alice Johnson",
     phoneNumber: "254712345678",
     name: "Alice Johnson",
     friends: [
