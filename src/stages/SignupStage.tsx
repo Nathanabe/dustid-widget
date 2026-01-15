@@ -52,8 +52,12 @@ const SignupStage: React.FC<SignupStageProps> = ({
     if (validatePhoneNumber(data.phoneNumber)) {
       setIsLoading(true);
       try {
-        await apiService.sendOTP(data.phoneNumber, data.countryCode);
-        onNext?.();
+        const result = await apiService.sendOTP(data.phoneNumber, data.countryCode);
+        if (result.success) {
+          onNext?.();
+        } else {
+          onDataChange?.({ ...data, phoneError: result.message || "Phone not found" });
+        }
       } catch (error) {
         onDataChange?.({
           ...data,

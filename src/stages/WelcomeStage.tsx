@@ -11,6 +11,7 @@ import { useResponsive } from "../utils/responsive";
 interface WelcomeStageProps extends StageProps {
   data: {
     userName: string;
+    phoneNumber?: string;   // phone number must be passed for searching contacts
     selectedContact: Contact | null;
   };
 }
@@ -45,7 +46,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
   const searchContacts = async (query: string) => {
     setIsLoading(true);
     try {
-      const results = await apiService.searchContacts(query);
+      const results = await apiService.searchContacts(data?.phoneNumber, query);
       setContacts(results);
       setShowDropdown(results.length > 0);
     } catch (error) {

@@ -75,7 +75,13 @@ const OTPStage: React.FC<OTPStageProps> = ({
     if (otpString.length === 6) {
       setIsLoading(true);
       try {
-        await apiService.verifyOTP(otpString);
+        // build full phone number (dial code + cleaned number) to send to verify endpoint
+        const country = COUNTRIES.find((c) => c.code === data.countryCode);
+        const dial = country?.dialCode?.replace(/\D/g, "") || "";
+        const cleaned = (data.phoneNumber || "").replace(/\D/g, "");
+        const fullPhone = cleaned.startsWith(dial) || !dial ? cleaned : `${dial}${cleaned}`;
+
+        await apiService.verifyOTP(otpString, fullPhone);
         onNext?.();
       } catch (error) {
         console.error("Verification failed:", error);
@@ -147,7 +153,7 @@ const OTPStage: React.FC<OTPStageProps> = ({
                     fontSize: "18px",
                     fontWeight: "600",
                     backgroundColor: "white",
-                    borderRadius: "50%",
+                    borderRadius: "25%",
                     border: "1px solid #d1d5db",
                     outline: "none",
                   }}
@@ -238,7 +244,7 @@ const OTPStage: React.FC<OTPStageProps> = ({
                   fontSize: "18px",
                   fontWeight: "600",
                   backgroundColor: "white",
-                  borderRadius: "50%",
+                  borderRadius: "25%",
                   border: "1px solid #d1d5db",
                   outline: "none",
                 }}

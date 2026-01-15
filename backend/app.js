@@ -1,18 +1,42 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import bodyParser from "body-parser";
-import fs from "fs";
-import path from "path";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",")
+  : [];
+
+const allowCredentials = process.env.CORS_CREDENTIALS === "true";
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow non-browser requests (curl, mobile apps)
+    if (!origin) return callback(null, true);
+
+    // check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Block unknown origins in production
+    if (process.env.NODE_ENV === "production") {
+      return callback(new Error("CORS blocked"));
+    }
+
+    // Dev: allow unknown origins
+    callback(null, origin);
+  },
+  credentials: allowCredentials,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "OPTIONS"],
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
-
-
-
 
 // app.use(bodyParser.json());
 
@@ -20,9 +44,6 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.status(200).send('Welcome to the Contact Verification API!');
 });
-
-
-
 
 app.post("/verify", (req, res) => {
   const { phoneNumber } = req.body;
@@ -39,8 +60,9 @@ app.post("/verify", (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
   console.log(`Generated OTP for ${phoneNumber}: ${otp}`);
-
+  // Store OTP in memory (to be replaced with a cache)
   const existing = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
   if (existing) {
     existing.otp = otp;
@@ -48,6 +70,12 @@ app.post("/verify", (req, res) => {
     otpStore.push({ phoneNumber, otp });
   }
 
+  if (process.env.NODE_ENV === "production") {
+    // TODO: In production environment, integrate with SMS API to send OTP
+    // don't forget to return a response here.
+    console.log(`Send OTP ${otp} to phone number ${phoneNumber}`);
+  }
+  // development environment: always success
   return res.status(200).json({ message: "OTP sent successfully." });
 });
 
@@ -61,7 +89,7 @@ app.post("/validate-otp", (req, res) => {
       .status(400)
       .json({ message: "Phone number and OTP are required." });
   }
-
+  
   const record = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
 
   if (record && record.otp === otp) {
@@ -74,11 +102,8 @@ app.post("/validate-otp", (req, res) => {
 
 app.post("/search", (req, res) => {
   const { phoneNumber, query } = req.body;
-
-  if (!phoneNumber || !query) {
-    return res
-      .status(400)
-      .json({ message: "Phone number and search query are required." });
+  if (!phoneNumber) {
+    return res.status(400).json({ message: "Phone number is required." });
   }
 
   const contact = contactsDB.find(
@@ -88,13 +113,27 @@ app.post("/search", (req, res) => {
     return res.status(404).json({ message: "Contact not found." });
   }
 
-  const results = contact.friends.filter(
-    (friend) =>
-      friend.name.toLowerCase().includes(query.toLowerCase()) ||
-      friend.email.toLowerCase().includes(query.toLowerCase())
-  );
+  let results = contact.friends || [];
+  if (query && query.toString().trim()) {
+    const q = query.toString().toLowerCase();
+    results = results.filter(
+      (friend) => (friend.name || "").toLowerCase().includes(q) || (friend.email || "").toLowerCase().includes(q)
+    );
+  }
 
   return res.status(200).json({ results });
+});
+
+
+// profile endpoint returns contact object for a given phoneNumber
+app.post("/profile", (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({ message: "Phone number is required." });
+  }
+  const contact = contactsDB.find((c) => c.phoneNumber === phoneNumber);
+  if (!contact) return res.status(404).json({ message: "Contact not found." });
+  return res.status(200).json({ contact });
 });
 
 export default app;
