@@ -170,31 +170,30 @@ const OTPStage: React.FC<OTPStageProps> = ({
                   width: "100px",
                   height: "28px",
                   backgroundColor: "#54358C",
-                  fontSize: "14px",
+                  fontSize: "12px",
                   fontWeight:"light"
                 }}
               >
                 {isLoading ? "Verifying..." : "Verify"}
               </button>
 
-              {/* {data.resendCountdown > 0 ? (
-              <p
-                style={{
-                  color: "#6b7280",
-                  fontSize: "12px",
-                  whiteSpace: "nowrap",
-                }}
-              >
+            {data.resendCountdown > 0 ? (
+              <p style={{ color: "#6b7280", fontSize: "12px" }}>
                 Resend in {data.resendCountdown}s
               </p>
             ) : (
               <button
                 onClick={handleResendCode}
-                style={styles.button("outline")}
+                style={{
+                  ...styles.button("outline"),
+                  height: "28px",
+                  fontSize: "12px",
+                  fontWeight:"light"
+                }}
               >
                 Resend
               </button>
-            )} */}
+            )}
             </div>
           </div>
         </div>
