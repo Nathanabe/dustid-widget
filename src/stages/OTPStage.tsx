@@ -161,7 +161,7 @@ const OTPStage: React.FC<OTPStageProps> = ({
               ))}
             </div>
 
-            <div style={{
+            <div style={{ //responsive design for mobile version
               display: "flex",
               flexDirection: "column",
               gap: "8px",
