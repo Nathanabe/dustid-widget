@@ -170,13 +170,13 @@ const OTPStage: React.FC<OTPStageProps> = ({
                   width: "100px",
                   height: "28px",
                   backgroundColor: "#54358C",
-                  fontSize: "12px",
+                  fontSize: "12px",   //font size reduced for mobile version
                   fontWeight:"light"
                 }}
               >
                 {isLoading ? "Verifying..." : "Verify"}
               </button>
-
+            {/*added the missing resend part back to mobile version*/}
             {data.resendCountdown > 0 ? (
               <p style={{ color: "#6b7280", fontSize: "12px" }}>
                 Resend in {data.resendCountdown}s
