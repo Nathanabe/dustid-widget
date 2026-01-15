@@ -161,7 +161,7 @@ const OTPStage: React.FC<OTPStageProps> = ({
               ))}
             </div>
 
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
               <button
                 onClick={handleVerify}
                 disabled={isLoading}
