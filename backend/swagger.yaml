@@ -1,0 +1,169 @@
+openapi: 3.0.0
+info:
+  title: Dustid Contact Verification API
+  version: 1.0.0
+  description: Simple mock API for OTP verification and contact lookup.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /:
+    get:
+      summary: Home route
+      description: Basic check if API is running
+      responses:
+        '200':
+          description: Welcome message
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Welcome to the Contact Verification API!
+
+  /verify:
+    post:
+      summary: Generate OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+                  example: "254712345678"
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: OTP sent successfully.
+        '400':
+          description: Missing phone number
+        '404':
+          description: Phone number not found
+
+  /validate-otp:
+    post:
+      summary: Validate OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+                - otp
+              properties:
+                phoneNumber:
+                  type: string
+                  example: "254712345678"
+                otp:
+                  type: string
+                  example: "123456"
+      responses:
+        '200':
+          description: OTP validated successfully
+        '400':
+          description: Missing phone number or OTP
+        '401':
+          description: Invalid OTP
+
+  /search:
+    post:
+      summary: Search friends
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+                  example: "254712345678"
+                query:
+                  type: string
+                  description: Optional search term
+                  example: "bob"
+      responses:
+        '200':
+          description: List of friends
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        email:
+                          type: string
+        '400':
+          description: Missing phone number
+        '404':
+          description: Contact not found
+
+  /profile:
+    post:
+      summary: Get contact profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+                  example: "254712345678"
+      responses:
+        '200':
+          description: Contact object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  phoneNumber:
+                    type: string
+                  name:
+                    type: string
+                  friends:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        email:
+                          type: string
+        '400':
+          description: Missing phone number
+        '404':
+          description: Contact not found 
