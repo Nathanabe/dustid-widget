@@ -8,6 +8,7 @@ import { COUNTRIES } from "../constants/countries";
 import { styles } from "../styles";
 import { apiService } from "../utils/api";
 import { useResponsive } from "../utils/responsive";
+import { useToast } from "../components/Toast";
 
 interface OTPStageProps extends StageProps {
   data: {
@@ -28,7 +29,7 @@ const OTPStage: React.FC<OTPStageProps> = ({
   const { isMobile } = useResponsive();
   const [isLoading, setIsLoading] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-
+  const showToast = useToast();
   const selectedCountry = COUNTRIES.find((c) => c.code === data.countryCode);
 
   useEffect(() => {
@@ -84,10 +85,16 @@ const OTPStage: React.FC<OTPStageProps> = ({
         await apiService.verifyOTP(otpString, fullPhone);
         onNext?.();
       } catch (error) {
-        console.error("Verification failed:", error);
+        console.error("Verification failed:", error instanceof Error ? error.message : error);
+        showToast(`Verification failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       } finally {
         setIsLoading(false);
       }
+    }
+    else {
+      // Make sure the user has entered a 6-digit code completely before attempting verification
+      const msg = "Please enter the 6-digit code";
+      showToast(msg);
     }
   };
 
@@ -96,7 +103,8 @@ const OTPStage: React.FC<OTPStageProps> = ({
       await apiService.sendOTP(data.phoneNumber, data.countryCode);
       onDataChange?.({ ...data, resendCountdown: 30 });
     } catch (error) {
-      console.error("Failed to resend code:", error);
+      console.error("Failed to resend code:", error instanceof Error ? error.message : error);
+      showToast(`Failed to resend code: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   };
 

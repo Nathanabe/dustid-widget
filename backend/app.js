@@ -1,11 +1,31 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import yaml from "js-yaml";
+import swaggerUi from "swagger-ui-express";
+import OpenApiValidator from 'express-openapi-validator';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
+// parse JSON bodies before OpenAPI validation
+app.use(express.json());
+
+// load OpenAPI spec
+const apiSpecPath = path.join(__dirname, "swagger.yaml");
+const apiSpecRaw = fs.readFileSync(apiSpecPath, "utf8");
+const swaggerDocument = yaml.load(apiSpecRaw);
+
+const prod = process.env.NODE_ENV === "production";
+
+// CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",")
   : [];
@@ -23,7 +43,7 @@ const corsOptions = {
     }
 
     // Block unknown origins in production
-    if (process.env.NODE_ENV === "production") {
+    if (prod) {
       return callback(new Error("CORS blocked"));
     }
 
@@ -34,28 +54,49 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "OPTIONS"],
 };
+
 app.use(cors(corsOptions));
 
-app.use(express.json());
+// Serve Swagger UI
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// app.use(bodyParser.json());
+// Install OpenAPI validator (requests + optional responses)
+app.use(
+  OpenApiValidator.middleware({
+    apiSpec: './swagger.yaml',
+    validateRequests: true, // (default)
+    validateResponses: true, // false by default
+  }),
+);
 
 // Basic route for home page
 app.get('/', (req, res) => {
-    res.status(200).send('Welcome to the Contact Verification API!');
+    res.status(200).send(
+        `<!doctype html>
+        <html lang="en">
+        <head><meta charset="utf-8"><title>Contact Verification API</title></head>
+        <body>
+          <h1>Welcome to the Contact Verification API!</h1>
+          <p>Explore the <a href="./docs/">API documentation</a>.</p>
+        </body>
+        </html>`
+    );
 });
 
 app.post("/verify", (req, res) => {
   const { phoneNumber } = req.body;
 
+  /* handled by OpenAPI Validator middleware
   if (!phoneNumber) {
     return res.status(400).json({ message: "Phone number is required." });
   }
+  */
 
   const foundContact = contactsDB.find(
     (contact) => contact.phoneNumber === phoneNumber
   );
   if (!foundContact) {
+    console.log(`Phone number ${phoneNumber} not found in contactsDB.`);
     return res.status(404).json({ message: "Phone number not found." });
   }
 
@@ -70,7 +111,7 @@ app.post("/verify", (req, res) => {
     otpStore.push({ phoneNumber, otp });
   }
 
-  if (process.env.NODE_ENV === "production") {
+  if (prod) {
     // TODO: In production environment, integrate with SMS API to send OTP
     // don't forget to return a response here.
     console.log(`Send OTP ${otp} to phone number ${phoneNumber}`);
@@ -84,17 +125,21 @@ app.post("/verify", (req, res) => {
 app.post("/validate-otp", (req, res) => {
   const { phoneNumber, otp } = req.body;
 
+  /* handled by OpenAPI Validator middleware
   if (!phoneNumber || !otp) {
+    console.log(`Validation failed: Missing phoneNumber or OTP. Received phoneNumber: ${phoneNumber}, OTP: ${otp}`);
     return res
       .status(400)
       .json({ message: "Phone number and OTP are required." });
   }
-  
+  */
+
   const record = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
 
   if (record && record.otp === otp) {
     return res.status(200).json({ message: "OTP validated successfully." });
   } else {
+    console.log(`OTP validation failed for phone number ${phoneNumber}. Expected OTP: ${record ? record.otp : 'N/A'}, Received OTP: ${otp}`);
     return res.status(401).json({ message: "Invalid OTP." });
   }
 });
@@ -102,14 +147,17 @@ app.post("/validate-otp", (req, res) => {
 
 app.post("/search", (req, res) => {
   const { phoneNumber, query } = req.body;
+  /* handled by OpenAPI Validator middleware
   if (!phoneNumber) {
+    console.log("Search failed: Missing phoneNumber in request body.");
     return res.status(400).json({ message: "Phone number is required." });
   }
-
+  */
   const contact = contactsDB.find(
     (contact) => contact.phoneNumber === phoneNumber
   );
   if (!contact) {
+    console.log(`Search failed: Contact with phone number ${phoneNumber} not found.`);
     return res.status(404).json({ message: "Contact not found." });
   }
 
@@ -128,15 +176,27 @@ app.post("/search", (req, res) => {
 // profile endpoint returns contact object for a given phoneNumber
 app.post("/profile", (req, res) => {
   const { phoneNumber } = req.body;
+  /* handled by OpenAPI Validator middleware
   if (!phoneNumber) {
+    console.log("Profile retrieval failed: Missing phoneNumber in request body.");
     return res.status(400).json({ message: "Phone number is required." });
   }
+  */
   const contact = contactsDB.find((c) => c.phoneNumber === phoneNumber);
   if (!contact) return res.status(404).json({ message: "Contact not found." });
   return res.status(200).json({ contact });
 });
 
-export default app;
+
+
+// Global error handler — place after routes and after OpenAPI validator
+app.use((err, req, res, next) => {
+  if (err && err.status && err.errors) {
+    return res.status(err.status).json({ message: err.message, errors: err.errors });
+  }
+  console.error(err);
+  res.status(500).json({ message: "Internal Server Error" });
+});
 
 const otpStore = []; // [{ phoneNumber, otp }]
 
@@ -375,4 +435,6 @@ const contactsDB = [
     ],
   },
 ];
+
+export default app;
 

@@ -10,6 +10,7 @@ import SignupStage from "./stages/SignupStage";
 import WelcomeStage from "./stages/WelcomeStage";
 import { styles } from "./styles";
 import BannerStage from "./stages/BannerStage";
+import { ToastProvider } from "./components/Toast";
 
 import { apiService } from "./utils/api";
 import { COUNTRIES } from "./constants/countries";
@@ -97,59 +98,61 @@ export default function DustidWidget({
   };
 
   return (
-    <div style={styles.container}>
-      {stage === "banner" && (
-        <BannerStage onNext={() => handleStageChange("signup")} />
-      )}
+    <ToastProvider>
+      <div style={styles.container}>
+        {stage === "banner" && (
+          <BannerStage onNext={() => handleStageChange("signup")} />
+        )}
 
-      {stage === "signup" && (
-        <SignupStage
-          onNext={() => handleStageChange("otp")}
-          onBack={goBack}
-          onClose={closeWidget}
-          data={signupData}
-          onDataChange={setSignupData}
-        />
-      )}
+        {stage === "signup" && (
+          <SignupStage
+            onNext={() => handleStageChange("otp")}
+            onBack={goBack}
+            onClose={closeWidget}
+            data={signupData}
+            onDataChange={setSignupData}
+          />
+        )}
 
-      {stage === "otp" && (
-        <OTPStage
-          onNext={() => handleStageChange("welcome")}
-          onBack={goBack}
-          onClose={closeWidget}
-          data={otpData}
-          onDataChange={setOtpData}
-        />
-      )}
+        {stage === "otp" && (
+          <OTPStage
+            onNext={() => handleStageChange("welcome")}
+            onBack={goBack}
+            onClose={closeWidget}
+            data={otpData}
+            onDataChange={setOtpData}
+          />
+        )}
 
-      {stage === "welcome" && (
-        <WelcomeStage
-          onNext={() => handleStageChange("contactSelected")}
-          onClose={closeWidget}
-          data={welcomeData}
-          onDataChange={setWelcomeData}
-        />
-      )}
+        {stage === "welcome" && (
+          <WelcomeStage
+            onNext={() => handleStageChange("contactSelected")}
+            onClose={closeWidget}
+            data={welcomeData}
+            onDataChange={setWelcomeData}
+          />
+        )}
 
-      {stage === "contactSelected" && welcomeData.selectedContact && (
-        <ContactSelectedStage
-          onNext={() => handleStageChange("shopping")}
-          onBack={goBack}
-          data={{
-            userName: welcomeData.userName,
-            selectedContact: welcomeData.selectedContact,
-          }}
-        />
-      )}
+        {stage === "contactSelected" && welcomeData.selectedContact && (
+          <ContactSelectedStage
+            onNext={() => handleStageChange("shopping")}
+            onBack={goBack}
+            data={{
+              userName: welcomeData.userName,
+              selectedContact: welcomeData.selectedContact,
+            }}
+          />
+        )}
 
-      {stage === "shopping" && welcomeData.selectedContact && (
-        <ShoppingStage
-          onBack={goBack}
-          data={{
-            selectedContact: welcomeData.selectedContact,
-          }}
-        />
-      )}
-    </div>
+        {stage === "shopping" && welcomeData.selectedContact && (
+          <ShoppingStage
+            onBack={goBack}
+            data={{
+              selectedContact: welcomeData.selectedContact,
+            }}
+          />
+        )}
+      </div>
+    </ToastProvider>
   );
 }

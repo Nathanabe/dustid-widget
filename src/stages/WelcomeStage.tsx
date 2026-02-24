@@ -7,6 +7,7 @@ import type { StageProps, Contact } from "../types";
 import { styles } from "../styles";
 import { apiService } from "../utils/api";
 import { useResponsive } from "../utils/responsive";
+import { useToast } from "../components/Toast";
 
 interface WelcomeStageProps extends StageProps {
   data: {
@@ -28,6 +29,7 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const showToast = useToast();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -48,9 +50,10 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
     try {
       const results = await apiService.searchContacts(data?.phoneNumber, query);
       setContacts(results);
-      setShowDropdown(results.length > 0);
+      setShowDropdown(true);  // Show dropdown when results are returned even if empty.
     } catch (error) {
-      console.error("Failed to search contacts:", error);
+      console.error("Failed to search contacts:", error instanceof Error ? error.message : error);
+      showToast(`Failed to search contacts: ${error instanceof Error ? error.message : "Unknown error"}`);
       setContacts([]);
       setShowDropdown(false);
     } finally {
