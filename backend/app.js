@@ -161,16 +161,26 @@ app.post("/search", (req, res) => {
     return res.status(404).json({ message: "Contact not found." });
   }
 
-  let results = contact.friends || [];
-  if (query && query.toString().trim()) {
-    const q = query.toString().toLowerCase();
-    results = results.filter(
-      (friend) => (friend.name || "").toLowerCase().includes(q) || (friend.email || "").toLowerCase().includes(q)
-    );
-    /*for (const friend of results) {
-      if (friend.address) delete(friend.address); // remove address from search results for privacy reasons
-    }*/
-  }
+  // Return contacts in a lightweight form, limiting size to keep payloads reasonable.
+  // When query is empty, return the first N friends so the dropdown can show defaults.
+  const friends = contact.friends || [];
+  const q = query?.toString().trim().toLowerCase();
+
+  const filtered = q
+    ? friends.filter(
+        (friend) =>
+          (friend.name || "").toLowerCase().includes(q) ||
+          (friend.email || "").toLowerCase().includes(q)
+      )
+    : friends;
+
+  const results = filtered
+    .slice(0, 20) // limit result size to keep payloads reasonable
+    .map((friend) => ({
+      id: friend.id,
+      name: friend.name,
+      email: friend.email, //we don't need the address yet, only use it later for checkout endpoint
+    }));
 
   return res.status(200).json({ results });
 });
