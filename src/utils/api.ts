@@ -1,30 +1,68 @@
 import type { Contact } from "../types"
+import { COUNTRIES } from "../constants/countries";
+
+// Define the base URL for the API from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+
+// helper function to simplify delay
+function delay(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+
+// helper function to add timeout to fetch (using AbortController)
+async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {}) {
+  const signal = (AbortSignal as any).timeout
+    ? AbortSignal.timeout(5000)
+    : new AbortController().signal; // fallback needed
+
+  const response = await fetch(input, { ...init, signal });
+  return response;
+}
+
+// Helper function for session token retrieval
+function getAuthHeaders() {
+  try {
+    const token = localStorage.getItem("authToken");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
 
 export const apiService = {
   async sendOTP(phoneNumber: string, countryCode: string): Promise<{ success: boolean; message: string }> {
+    // build numeric full phone: remove non-digits, prefix with country dial if needed
+    const clean = (phoneNumber || "").replace(/\D/g, "");
+    let fullPhone = clean;
+
+    if (countryCode) {
+      const country = COUNTRIES.find((c) => c.code === countryCode);
+      const dial = country?.dialCode?.replace(/\D/g, "") || "";
+      if (dial && !fullPhone.startsWith(dial)) {
+        fullPhone = `${dial}${fullPhone}`;
+      }
+    }
+
     try {
-      const response = await fetch("http://localhost:3000/verify", {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ phoneNumber: countryCode+phoneNumber }),
+        body: JSON.stringify({ phoneNumber: fullPhone }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         // Check if the response status is 2xx
         return {
           success: true,
-          message: data.message,
-          // contact: data.contact, // Include the contact data from the backend
+          message: data.message || "OTP is sent. Please check your SMS." 
         };
       } else {
         // Handle HTTP errors (e.g., 400, 404, 500)
         return {
           success: false,
-          message: data.message || "An unexpected error occurred.",
+          message: data.message || "Phone number not found. Please sign up first.",
         };
       }
     } catch (error) {
@@ -38,9 +76,11 @@ export const apiService = {
     }
   },
 
-  async verifyOTP(otp: string): Promise<{ success: boolean; token?: string }> {
-    await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 700))
+  async verifyOTP(otp: string, phoneNumber?: string): Promise<{ success: boolean; token?: string }> {
+    await delay(800 + Math.random() * 700);
 
+    // DEV shortcut (use only when back-end is turned off)
+    /*
     if (otp.length === 6) {
       return {
         success: true,
@@ -49,48 +89,70 @@ export const apiService = {
     }
 
     throw new Error("Invalid OTP code")
+    */
+
+    // call backend validate endpoint
+    try {
+      const authHeaders = (getAuthHeaders() ?? {}) as Record<string, string>;
+      const resp = await fetchWithTimeout(`${API_BASE_URL}/validate-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ phoneNumber, otp }),
+        credentials: 'include'
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ message: "Invalid OTP" }));
+        throw new Error(err.message || "OTP validation failed");
+      }
+      const json = await resp.json();
+      const token = json.token || ("server-token-" + Date.now());
+      try { localStorage.setItem("authToken", token); } catch {}
+      return { success: true, token };
+    } catch (err) { throw err; }
   },
 
-  async searchContacts(query: string): Promise<Contact[]> {
-    await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 200))
+  async searchContacts(phoneNumber: string | undefined, query: string): Promise<Contact[]> {
+    await delay(300 + Math.random() * 200);
 
-    const mockContacts: Contact[] = [
-      {
-        id: 1,
-        name: "Amy Scholfield",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bc?w=40&h=40&fit=crop&crop=face",
-        date: "17 May",
-      },
-      {
-        id: 2,
-        name: "David Ochieng",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face",
-        date: "15 May",
-      },
-      {
-        id: 3,
-        name: "John Kamau",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face",
-        date: "12 May",
-      },
-      {
-        id: 4,
-        name: "Mary Wanjiku",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face",
-        date: "10 May",
-      },
-      {
-        id: 5,
-        name: "Sarah Kimani",
-        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=40&h=40&fit=crop&crop=face",
-        date: "8 May",
-      },
-    ]
-
-    if (!query.trim()) {
-      return mockContacts.slice(0, 3)
+    try {
+      const authHeaders = (getAuthHeaders() ?? {}) as Record<string, string>;
+      const resp = await fetchWithTimeout(`${API_BASE_URL}/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ phoneNumber, query }),
+        credentials: 'include'
+      });
+      if (!resp.ok) return [];
+      const json = await resp.json();
+      const results = json.results || [];
+      return results.map((r:any, i:number) => ({
+        id: typeof r.id === 'number' ? r.id : i+1,
+        name: r.name || r.first_name || r.email || "",
+        avatar: r.avatar || "",
+        date: r.date,
+      }));
+    } catch (err) {
+      console.error("searchContacts error:", err);
+      return [];
     }
+  },
 
-    return mockContacts.filter((contact) => contact.name.toLowerCase().includes(query.toLowerCase()))
+  async getProfile(phoneNumber: string): Promise<any> {
+    try {
+      const authHeaders = (getAuthHeaders() ?? {}) as Record<string, string>;
+      const resp = await fetchWithTimeout(`${API_BASE_URL}/profile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ phoneNumber }),
+        credentials: 'include'
+      });
+      if (!resp.ok) throw new Error("Profile not found");
+      const json = await resp.json();
+      return json.contact || json;
+    } catch (err) {
+      console.error("getProfile error:", err);
+      throw err;
+    }
   },
 }
+

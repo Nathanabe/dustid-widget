@@ -7,10 +7,12 @@ import type { StageProps, Contact } from "../types";
 import { styles } from "../styles";
 import { apiService } from "../utils/api";
 import { useResponsive } from "../utils/responsive";
+import { useToast } from "../components/Toast";
 
 interface WelcomeStageProps extends StageProps {
   data: {
     userName: string;
+    phoneNumber?: string;   // phone number must be passed for searching contacts
     selectedContact: Contact | null;
   };
 }
@@ -27,6 +29,8 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchDebounceRef = useRef<number | null>(null);
+  const showToast = useToast();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -45,11 +49,12 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
   const searchContacts = async (query: string) => {
     setIsLoading(true);
     try {
-      const results = await apiService.searchContacts(query);
+      const results = await apiService.searchContacts(data?.phoneNumber, query);
       setContacts(results);
-      setShowDropdown(results.length > 0);
+      setShowDropdown(true); // Show dropdown when results are returned even if empty.
     } catch (error) {
-      console.error("Failed to search contacts:", error);
+      console.error("Failed to search contacts:", error instanceof Error ? error.message : error);
+      showToast(`Failed to search contacts: ${error instanceof Error ? error.message : "Unknown error"}`);
       setContacts([]);
       setShowDropdown(false);
     } finally {
@@ -59,7 +64,18 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    searchContacts(query);
+
+    if (searchDebounceRef.current) {
+      window.clearTimeout(searchDebounceRef.current);
+    }
+
+    // Show dropdown immediately while we resolve results.
+    setShowDropdown(true);
+
+    // Debounce network requests so we don't fire on every keystroke.
+    searchDebounceRef.current = window.setTimeout(() => {
+      searchContacts(query);
+    }, 300);
   };
 
   const handleContactSelect = (contact: Contact) => {
@@ -70,10 +86,19 @@ const WelcomeStage: React.FC<WelcomeStageProps> = ({
   };
 
   const handleSearchFocus = () => {
-    if (searchQuery.trim() === "") {
-      searchContacts("");
-    }
+    // Show results as soon as the input is focused.
+    setShowDropdown(true);
+    searchContacts(searchQuery);
   };
+
+  // Clear debounce timeout on unmount to prevent memory leaks.
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        window.clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, []);
 
   const searchComponent = (
     <div style={{ position: "relative", width: "100%" }} ref={dropdownRef}>

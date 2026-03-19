@@ -1,45 +1,111 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import yaml from "js-yaml";
+import swaggerUi from "swagger-ui-express";
+import OpenApiValidator from 'express-openapi-validator';
 import jwt from "jsonwebtoken";
 import { authenticateToken } from "./middleware/auth.js";
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-app.use(cors());
+
+// parse JSON bodies before OpenAPI validation
 app.use(express.json());
 
+// load OpenAPI spec
+const apiSpecPath = path.join(__dirname, "swagger.yaml");
+const apiSpecRaw = fs.readFileSync(apiSpecPath, "utf8");
+const swaggerDocument = yaml.load(apiSpecRaw);
 
+const prod = process.env.NODE_ENV === "production";
 
+// CORS configuration
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",")
+  : [];
 
-// app.use(bodyParser.json());
+const allowCredentials = process.env.CORS_CREDENTIALS === "true";
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow non-browser requests (curl, mobile apps)
+    if (!origin) return callback(null, true);
+
+    // check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Block unknown origins in production
+    if (prod) {
+      return callback(new Error("CORS blocked"));
+    }
+
+    // Dev: allow unknown origins
+    callback(null, origin);
+  },
+  credentials: allowCredentials,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "OPTIONS"],
+};
+
+app.use(cors(corsOptions));
+
+// Serve Swagger UI
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Install OpenAPI validator (requests + optional responses)
+app.use(
+  OpenApiValidator.middleware({
+    apiSpec: './swagger.yaml',
+    validateRequests: true, // (default)
+    validateResponses: true, // false by default
+  }),
+);
 
 // Basic route for home page
 app.get('/', (req, res) => {
-    res.status(200).send('Welcome to the Contact Verification API!');
+    res.status(200).send(
+        `<!doctype html>
+        <html lang="en">
+        <head><meta charset="utf-8"><title>Contact Verification API</title></head>
+        <body>
+          <h1>Welcome to the Contact Verification API!</h1>
+          <p>Explore the <a href="./docs/">API documentation</a>.</p>
+        </body>
+        </html>`
+    );
 });
-
-
-
 
 app.post("/verify", (req, res) => {
   const { phoneNumber } = req.body;
 
+  /* handled by OpenAPI Validator middleware
   if (!phoneNumber) {
     return res.status(400).json({ message: "Phone number is required." });
   }
+  */
 
   const foundContact = contactsDB.find(
     (contact) => contact.phoneNumber === phoneNumber
   );
   if (!foundContact) {
+    console.log(`Phone number ${phoneNumber} not found in contactsDB.`);
     return res.status(404).json({ message: "Phone number not found." });
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
   console.log(`Generated OTP for ${phoneNumber}: ${otp}`);
-
+  // Store OTP in memory (to be replaced with a cache)
   const existing = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
   if (existing) {
     existing.otp = otp;
@@ -47,6 +113,12 @@ app.post("/verify", (req, res) => {
     otpStore.push({ phoneNumber, otp });
   }
 
+  if (prod) {
+    // TODO: In production environment, integrate with SMS API to send OTP
+    // don't forget to return a response here.
+    console.log(`Send OTP ${otp} to phone number ${phoneNumber}`);
+  }
+  // development environment: always success
   return res.status(200).json({ message: "OTP sent successfully." });
 });
 
@@ -55,11 +127,14 @@ app.post("/verify", (req, res) => {
 app.post("/validate-otp", (req, res) => {
   const { phoneNumber, otp } = req.body;
 
+  /* handled by OpenAPI Validator middleware
   if (!phoneNumber || !otp) {
+    console.log(`Validation failed: Missing phoneNumber or OTP. Received phoneNumber: ${phoneNumber}, OTP: ${otp}`);
     return res
       .status(400)
       .json({ message: "Phone number and OTP are required." });
   }
+  */
 
   const record = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
 
@@ -71,6 +146,7 @@ app.post("/validate-otp", (req, res) => {
     );
     return res.status(200).json({ message: "OTP validated successfully.", token });
   } else {
+    console.log(`OTP validation failed for phone number ${phoneNumber}. Expected OTP: ${record ? record.otp : 'N/A'}, Received OTP: ${otp}`);
     return res.status(401).json({ message: "Invalid OTP." });
   }
 });
@@ -95,36 +171,75 @@ app.get("/friends/:friendId", authenticateToken, (req, res) => {
 
 app.post("/search", authenticateToken, (req, res) => {
   const { phoneNumber, query } = req.body;
-
-  if (!phoneNumber || !query) {
-    return res
-      .status(400)
-      .json({ message: "Phone number and search query are required." });
+  /* handled by OpenAPI Validator middleware
+  if (!phoneNumber) {
+    console.log("Search failed: Missing phoneNumber in request body.");
+    return res.status(400).json({ message: "Phone number is required." });
   }
-
+  */
   const contact = contactsDB.find(
     (contact) => contact.phoneNumber === phoneNumber
   );
   if (!contact) {
+    console.log(`Search failed: Contact with phone number ${phoneNumber} not found.`);
     return res.status(404).json({ message: "Contact not found." });
   }
 
-  const results = contact.friends.filter(
-    (friend) =>
-      friend.name.toLowerCase().includes(query.toLowerCase()) ||
-      friend.email.toLowerCase().includes(query.toLowerCase())
-  );
+  // Return contacts in a lightweight form, limiting size to keep payloads reasonable.
+  // When query is empty, return the first N friends so the dropdown can show defaults.
+  const friends = contact.friends || [];
+  const q = query?.toString().trim().toLowerCase();
+
+  const filtered = q
+    ? friends.filter(
+        (friend) =>
+          (friend.name || "").toLowerCase().includes(q) ||
+          (friend.email || "").toLowerCase().includes(q)
+      )
+    : friends;
+
+  const results = filtered
+    .slice(0, 20) // limit result size to keep payloads reasonable
+    .map((friend) => ({
+      id: friend.id,
+      name: friend.name,
+      email: friend.email, //we don't need the address yet, only use it later for checkout endpoint
+    }));
 
   return res.status(200).json({ results });
 });
 
-export default app;
+
+// profile endpoint returns contact object for a given phoneNumber
+app.post("/profile", (req, res) => {
+  const { phoneNumber } = req.body;
+  /* handled by OpenAPI Validator middleware
+  if (!phoneNumber) {
+    console.log("Profile retrieval failed: Missing phoneNumber in request body.");
+    return res.status(400).json({ message: "Phone number is required." });
+  }
+  */
+  const contact = contactsDB.find((c) => c.phoneNumber === phoneNumber);
+  if (!contact) return res.status(404).json({ message: "Contact not found." });
+  return res.status(200).json({ contact });
+});
+
+
+
+// Global error handler — place after routes and after OpenAPI validator
+app.use((err, req, res, next) => {
+  if (err && err.status && err.errors) {
+    return res.status(err.status).json({ message: err.message, errors: err.errors });
+  }
+  console.error(err);
+  res.status(500).json({ message: "Internal Server Error" });
+});
 
 const otpStore = []; // [{ phoneNumber, otp }]
 
 const contactsDB = [
   {
-    id: "Alice Johnson",
+    id: "contact001",
     phoneNumber: "254712345678",
     name: "Alice Johnson",
     friends: [
@@ -357,4 +472,6 @@ const contactsDB = [
     ],
   },
 ];
+
+export default app;
 
