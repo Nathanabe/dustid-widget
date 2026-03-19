@@ -7,6 +7,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000
 // helper function to simplify delay
 function delay(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
 
+// helper function to add timeout to fetch (using AbortController)
+async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {}) {
+  const signal = (AbortSignal as any).timeout
+    ? AbortSignal.timeout(5000)
+    : new AbortController().signal; // fallback needed
+
+  const response = await fetch(input, { ...init, signal });
+  return response;
+}
+
 // Helper function for session token retrieval
 function getAuthHeaders() {
   try {
@@ -32,7 +42,7 @@ export const apiService = {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/verify`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -84,7 +94,7 @@ export const apiService = {
     // call backend validate endpoint
     try {
       const authHeaders = (getAuthHeaders() ?? {}) as Record<string, string>;
-      const resp = await fetch(`${API_BASE_URL}/validate-otp`, {
+      const resp = await fetchWithTimeout(`${API_BASE_URL}/validate-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ phoneNumber, otp }),
@@ -106,7 +116,7 @@ export const apiService = {
 
     try {
       const authHeaders = (getAuthHeaders() ?? {}) as Record<string, string>;
-      const resp = await fetch(`${API_BASE_URL}/search`, {
+      const resp = await fetchWithTimeout(`${API_BASE_URL}/search`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ phoneNumber, query }),
@@ -130,7 +140,7 @@ export const apiService = {
   async getProfile(phoneNumber: string): Promise<any> {
     try {
       const authHeaders = (getAuthHeaders() ?? {}) as Record<string, string>;
-      const resp = await fetch(`${API_BASE_URL}/profile`, {
+      const resp = await fetchWithTimeout(`${API_BASE_URL}/profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ phoneNumber }),

@@ -167,6 +167,9 @@ app.post("/search", (req, res) => {
     results = results.filter(
       (friend) => (friend.name || "").toLowerCase().includes(q) || (friend.email || "").toLowerCase().includes(q)
     );
+    /*for (const friend of results) {
+      if (friend.address) delete(friend.address); // remove address from search results for privacy reasons
+    }*/
   }
 
   return res.status(200).json({ results });
