@@ -1,9 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import bodyParser from "body-parser";
-import fs from "fs";
-import path from "path";
+import jwt from "jsonwebtoken";
+import { authenticateToken } from "./middleware/auth.js";
 
 dotenv.config();
 
@@ -65,28 +64,36 @@ app.post("/validate-otp", (req, res) => {
   const record = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
 
   if (record && record.otp === otp) {
-    return res.status(200).json({ message: "OTP validated successfully." });
+    const token = jwt.sign(
+      { phoneNumber },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    return res.status(200).json({ message: "OTP validated successfully.", token });
   } else {
     return res.status(401).json({ message: "Invalid OTP." });
   }
 });
 
 
-app.get("/friends/:friendId/address", (req, res) => {
+app.get("/friends/:friendId", authenticateToken, (req, res) => {
   const { friendId } = req.params;
 
-  for (const contact of contactsDB) {
-    const friend = contact.friends.find((f) => f.id === friendId);
-    if (friend) {
-      return res.status(200).json({ address: friend.address });
-    }
+  const contact = contactsDB.find((c) => c.phoneNumber === req.user.phoneNumber);
+  if (!contact) {
+    return res.status(404).json({ message: "Contact not found." });
   }
 
-  return res.status(404).json({ message: "Friend not found." });
+  const friend = contact.friends.find((f) => f.id === friendId);
+  if (!friend) {
+    return res.status(403).json({ message: "Cannot access details of users who are not in your friend list." });
+  }
+
+  return res.status(200).json(friend);
 });
 
 
-app.post("/search", (req, res) => {
+app.post("/search", authenticateToken, (req, res) => {
   const { phoneNumber, query } = req.body;
 
   if (!phoneNumber || !query) {
