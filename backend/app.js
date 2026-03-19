@@ -72,6 +72,20 @@ app.post("/validate-otp", (req, res) => {
 });
 
 
+app.get("/friends/:friendId/address", (req, res) => {
+  const { friendId } = req.params;
+
+  for (const contact of contactsDB) {
+    const friend = contact.friends.find((f) => f.id === friendId);
+    if (friend) {
+      return res.status(200).json({ address: friend.address });
+    }
+  }
+
+  return res.status(404).json({ message: "Friend not found." });
+});
+
+
 app.post("/search", (req, res) => {
   const { phoneNumber, query } = req.body;
 
