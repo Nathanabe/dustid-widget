@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 import yaml from "js-yaml";
 import swaggerUi from "swagger-ui-express";
 import OpenApiValidator from 'express-openapi-validator';
+import jwt from "jsonwebtoken";
+import { authenticateToken } from "./middleware/auth.js";
 
 dotenv.config();
 
@@ -137,7 +139,12 @@ app.post("/validate-otp", (req, res) => {
   const record = otpStore.find((entry) => entry.phoneNumber === phoneNumber);
 
   if (record && record.otp === otp) {
-    return res.status(200).json({ message: "OTP validated successfully." });
+    const token = jwt.sign(
+      { phoneNumber },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    return res.status(200).json({ message: "OTP validated successfully.", token });
   } else {
     console.log(`OTP validation failed for phone number ${phoneNumber}. Expected OTP: ${record ? record.otp : 'N/A'}, Received OTP: ${otp}`);
     return res.status(401).json({ message: "Invalid OTP." });
@@ -145,7 +152,24 @@ app.post("/validate-otp", (req, res) => {
 });
 
 
-app.post("/search", (req, res) => {
+app.get("/friends/:friendId", authenticateToken, (req, res) => {
+  const { friendId } = req.params;
+
+  const contact = contactsDB.find((c) => c.phoneNumber === req.user.phoneNumber);
+  if (!contact) {
+    return res.status(404).json({ message: "Contact not found." });
+  }
+
+  const friend = contact.friends.find((f) => f.id === friendId);
+  if (!friend) {
+    return res.status(403).json({ message: "Cannot access details of users who are not in your friend list." });
+  }
+
+  return res.status(200).json(friend);
+});
+
+
+app.post("/search", authenticateToken, (req, res) => {
   const { phoneNumber, query } = req.body;
   /* handled by OpenAPI Validator middleware
   if (!phoneNumber) {
@@ -215,7 +239,7 @@ const otpStore = []; // [{ phoneNumber, otp }]
 
 const contactsDB = [
   {
-    id: "Alice Johnson",
+    id: "contact001",
     phoneNumber: "254712345678",
     name: "Alice Johnson",
     friends: [

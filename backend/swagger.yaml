@@ -5,8 +5,53 @@ info:
   description: Simple mock API for OTP verification and contact lookup.
 
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:5000
     description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+    Address:
+      type: object
+      properties:
+        address1:
+          type: string
+        address2:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+    Friend:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
 
 paths:
   /:
@@ -15,12 +60,11 @@ paths:
       description: Basic check if API is running
       responses:
         '200':
-          description: Welcome message
+          description: Welcome page
           content:
-            text/plain:
+            text/html:
               schema:
                 type: string
-                example: Welcome to the Contact Verification API!
 
   /verify:
     post:
@@ -43,31 +87,19 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: OTP sent successfully.
+                $ref: '#/components/schemas/Message'
         '400':
           description: Missing phone number
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Phone number is required.
+                $ref: '#/components/schemas/Message'
         '404':
           description: Phone number not found
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Phone number not found.
+                $ref: '#/components/schemas/Message'
 
   /validate-otp:
     post:
@@ -99,30 +131,65 @@ paths:
                   message:
                     type: string
                     example: OTP validated successfully.
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         '400':
           description: Missing phone number or OTP
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Phone number and OTP are required.
+                $ref: '#/components/schemas/Message'
         '401':
           description: Invalid OTP
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Invalid OTP.
+                $ref: '#/components/schemas/Message'
+
+  /friends/{friendId}:
+    get:
+      summary: Get a friend's full details including address
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: friendId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: friend101
+      responses:
+        '200':
+          description: Friend object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Friend'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          description: Friend not in your list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
 
   /search:
     post:
       summary: Search friends
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -163,21 +230,19 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Phone number is required.
+                $ref: '#/components/schemas/Message'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
         '404':
           description: Contact not found
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Contact not found.
+                $ref: '#/components/schemas/Message'
 
   /profile:
     post:
@@ -202,40 +267,28 @@ paths:
               schema:
                 type: object
                 properties:
-                  id:
-                    type: string
-                  phoneNumber:
-                    type: string
-                  name:
-                    type: string
-                  friends:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        email:
-                          type: string
+                  contact:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      phoneNumber:
+                        type: string
+                      name:
+                        type: string
+                      friends:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Friend'
         '400':
           description: Missing phone number
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Phone number is required.
+                $ref: '#/components/schemas/Message'
         '404':
           description: Contact not found
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Contact not found.
+                $ref: '#/components/schemas/Message'
