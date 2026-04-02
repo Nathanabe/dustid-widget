@@ -26,15 +26,42 @@ export default function CartDrawer({ open, setOpen }: any) {
           >
             <h2 className="font-bold text-[#7C3AED]">Your Cart</h2>
 
-            {cart.map((item) => (
-              <p key={item.id}>
-                {item.name} - {formatCurrency(item.price)}
-              </p>
-            ))}
+            <div className="mt-4 space-y-3">
+              {cart.map((item) => (
+                <div key={item.id} className="flex gap-3 items-center">
+                  <img
+                    src={item.image}
+                    className="w-12 h-12 rounded object-cover"
+                  />
+                  <div>
+                    <p>{item.name}</p>
+                    <p className="text-sm text-[#7C3AED]">
+                      {formatCurrency(item.price)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-            <p className="mt-4 font-bold">
+            <p className="mt-6 font-bold">
               Total: {formatCurrency(total)}
             </p>
+
+            <button
+              onClick={() => {
+                navigate("/gift");
+                setOpen(false);
+              }}
+              className="mt-4 w-full bg-[#7C3AED] text-white py-3 rounded-lg"
+            >
+              Send as Gift 🎁
+            </button>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}            </p>
 
             <button
               onClick={() => {
