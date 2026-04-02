@@ -17,7 +17,8 @@ export default function ProductCard({ product }: { product: Product }) {
         className="h-40 w-full object-cover rounded"
       />
 
-      <h2>{product.name}</h2>
+      <h2 className="mt-2">{product.name}</h2>
+
       <p className="text-[#7C3AED] font-bold">
         {formatCurrency(product.price)}
       </p>
