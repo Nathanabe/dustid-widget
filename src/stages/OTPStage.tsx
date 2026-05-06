@@ -8,6 +8,7 @@ import { COUNTRIES } from "../constants/countries";
 import { styles } from "../styles";
 import { apiService } from "../utils/api";
 import { useResponsive } from "../utils/responsive";
+import { useToast } from "../components/Toast";
 
 interface OTPStageProps extends StageProps {
   data: {
@@ -28,7 +29,7 @@ const OTPStage: React.FC<OTPStageProps> = ({
   const { isMobile } = useResponsive();
   const [isLoading, setIsLoading] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-
+  const showToast = useToast();
   const selectedCountry = COUNTRIES.find((c) => c.code === data.countryCode);
 
   useEffect(() => {
@@ -75,13 +76,25 @@ const OTPStage: React.FC<OTPStageProps> = ({
     if (otpString.length === 6) {
       setIsLoading(true);
       try {
-        await apiService.verifyOTP(otpString);
+        // build full phone number (dial code + cleaned number) to send to verify endpoint
+        const country = COUNTRIES.find((c) => c.code === data.countryCode);
+        const dial = country?.dialCode?.replace(/\D/g, "") || "";
+        const cleaned = (data.phoneNumber || "").replace(/\D/g, "");
+        const fullPhone = cleaned.startsWith(dial) || !dial ? cleaned : `${dial}${cleaned}`;
+
+        await apiService.verifyOTP(otpString, fullPhone);
         onNext?.();
       } catch (error) {
-        console.error("Verification failed:", error);
+        console.error("Verification failed:", error instanceof Error ? error.message : error);
+        showToast(`Verification failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       } finally {
         setIsLoading(false);
       }
+    }
+    else {
+      // Make sure the user has entered a 6-digit code completely before attempting verification
+      const msg = "Please enter the 6-digit code";
+      showToast(msg);
     }
   };
 
@@ -90,7 +103,8 @@ const OTPStage: React.FC<OTPStageProps> = ({
       await apiService.sendOTP(data.phoneNumber, data.countryCode);
       onDataChange?.({ ...data, resendCountdown: 30 });
     } catch (error) {
-      console.error("Failed to resend code:", error);
+      console.error("Failed to resend code:", error instanceof Error ? error.message : error);
+      showToast(`Failed to resend code: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   };
 
@@ -147,7 +161,7 @@ const OTPStage: React.FC<OTPStageProps> = ({
                     fontSize: "18px",
                     fontWeight: "600",
                     backgroundColor: "white",
-                    borderRadius: "50%",
+                    borderRadius: "25%",
                     border: "1px solid #d1d5db",
                     outline: "none",
                   }}
@@ -155,7 +169,12 @@ const OTPStage: React.FC<OTPStageProps> = ({
               ))}
             </div>
 
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div style={{ //responsive design for mobile version
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              alignItems: "flex-start"
+            }}>
               <button
                 onClick={handleVerify}
                 disabled={isLoading}
@@ -164,31 +183,30 @@ const OTPStage: React.FC<OTPStageProps> = ({
                   width: "100px",
                   height: "28px",
                   backgroundColor: "#54358C",
-                  fontSize: "14px",
+                  fontSize: "12px",   //font size reduced for mobile version
                   fontWeight:"light"
                 }}
               >
                 {isLoading ? "Verifying..." : "Verify"}
               </button>
-
-              {/* {data.resendCountdown > 0 ? (
-              <p
-                style={{
-                  color: "#6b7280",
-                  fontSize: "12px",
-                  whiteSpace: "nowrap",
-                }}
-              >
+            {/*added the missing resend part back to mobile version*/}
+            {data.resendCountdown > 0 ? (
+              <p style={{ color: "#6b7280", fontSize: "12px" }}>
                 Resend in {data.resendCountdown}s
               </p>
             ) : (
               <button
                 onClick={handleResendCode}
-                style={styles.button("outline")}
+                style={{
+                  ...styles.button("outline"),
+                  height: "28px",
+                  fontSize: "12px",
+                  fontWeight:"light"
+                }}
               >
                 Resend
               </button>
-            )} */}
+            )}
             </div>
           </div>
         </div>
@@ -238,7 +256,7 @@ const OTPStage: React.FC<OTPStageProps> = ({
                   fontSize: "18px",
                   fontWeight: "600",
                   backgroundColor: "white",
-                  borderRadius: "50%",
+                  borderRadius: "25%",
                   border: "1px solid #d1d5db",
                   outline: "none",
                 }}

@@ -8,6 +8,7 @@ import { COUNTRIES } from "../constants/countries";
 import { styles } from "../styles";
 import { apiService } from "../utils/api";
 import { useResponsive } from "../utils/responsive";
+import { useToast } from "../components/Toast";
 
 interface SignupStageProps extends StageProps {
   data: {
@@ -26,40 +27,50 @@ const SignupStage: React.FC<SignupStageProps> = ({
 }) => {
   const { isMobile } = useResponsive();
   const [isLoading, setIsLoading] = useState(false);
-
+  const showToast = useToast();
   const selectedCountry = COUNTRIES.find((c) => c.code === data.countryCode);
 
+  // Validate phone number format based on selected country's expected digits (front-end only)
   const validatePhoneNumber = (number: string): boolean => {
     if (!selectedCountry) return false;
 
     const cleanNumber = number.replace(/\D/g, "");
     if (cleanNumber.length === 0) {
-      onDataChange?.({ ...data, phoneError: "Phone number is required" });
+      const msg = "Phone number is required";
+      onDataChange?.({ ...data, phoneError: msg });
+      showToast(msg);
       return false;
     }
     if (cleanNumber.length !== selectedCountry.digits) {
-      onDataChange?.({
-        ...data,
-        phoneError: `Phone number must be ${selectedCountry.digits} digits`,
-      });
+      const msg = `Phone number must be ${selectedCountry.digits} digits`;
+      onDataChange?.({ ...data, phoneError: msg });
+      showToast(msg);
       return false;
     }
     onDataChange?.({ ...data, phoneError: "" });
     return true;
   };
 
+  // Handle signup button click (interacting with the back-end to send OTP)
   const handleSignup = async () => {
     if (validatePhoneNumber(data.phoneNumber)) {
       setIsLoading(true);
       try {
-        await apiService.sendOTP(data.phoneNumber, data.countryCode);
-        onNext?.();
+        const result = await apiService.sendOTP(data.phoneNumber, data.countryCode);
+        if (result.success) {
+          onNext?.();
+        } else {
+          const msg = result.message || "Phone not found";
+          onDataChange?.({ ...data, phoneError: msg });
+          showToast(msg);
+        }
       } catch (error) {
+        const msg = error instanceof Error ? error.message : "Failed to send OTP";
         onDataChange?.({
           ...data,
-          phoneError:
-            error instanceof Error ? error.message : "Failed to send OTP",
+          phoneError: msg,
         });
+        showToast(msg);
       } finally {
         setIsLoading(false);
       }

@@ -27,6 +27,9 @@ export const styles = {
     variant: "primary" | "outline" = "primary",
     loading = false
   ): React.CSSProperties => ({
+    display: "inline-flex",   //size to content
+    alignItems: "center",     //center vertically
+    justifyContent: "center", //center horizontally
     fontWeight: "500",
     padding: "8px 16px",
     borderRadius: "3px",
