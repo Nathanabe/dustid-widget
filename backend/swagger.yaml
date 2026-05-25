@@ -147,6 +147,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/Message'
 
+  /friends:
+    get:
+      summary: Get all friends
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of friends
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  friends:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Friend'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+
   /friends/{friendId}:
     get:
       summary: Get a friend's full details including address
@@ -243,6 +273,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Message'
+
+  /pre-fill-checkout:
+    post:
+      summary: Pre-fill checkout with selected contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contact
+              properties:
+                contact:
+                  $ref: '#/components/schemas/Friend'
+      responses:
+        '200':
+          description: Contact received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  contact:
+                    $ref: '#/components/schemas/Friend'
 
   /profile:
     post:
