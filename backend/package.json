@@ -5,9 +5,11 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --watch './**/*.js'  server.js"
+    "dev": "nodemon --watch './**/*.js' server.js",
+    "start": "node server.js"
   },
   "dependencies": {
+    "@vercel/node": "^4.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
