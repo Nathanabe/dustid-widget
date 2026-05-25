@@ -152,6 +152,23 @@ app.post("/validate-otp", (req, res) => {
 });
 
 
+app.get("/friends", authenticateToken, (req, res) => {
+  const contact = contactsDB.find((c) => c.phoneNumber === req.user.phoneNumber);
+  if (!contact) {
+    return res.status(404).json({ message: "Contact not found." });
+  }
+
+  const friends = (contact.friends || []).map((f) => ({
+    id: f.id,
+    name: f.name,
+    email: f.email,
+    address: f.address,
+  }));
+
+  return res.status(200).json({ friends });
+});
+
+
 app.get("/friends/:friendId", authenticateToken, (req, res) => {
   const { friendId } = req.params;
 
@@ -222,6 +239,16 @@ app.post("/profile", (req, res) => {
   const contact = contactsDB.find((c) => c.phoneNumber === phoneNumber);
   if (!contact) return res.status(404).json({ message: "Contact not found." });
   return res.status(200).json({ contact });
+});
+
+
+
+app.post("/pre-fill-checkout", (req, res) => {
+  const { contact } = req.body;
+
+  console.log("📦 Received contact:", contact);
+
+  res.json({ message: "pre-fill-checkout received", contact });
 });
 
 
