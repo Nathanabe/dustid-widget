@@ -193,6 +193,23 @@ app.post("/validate-otp", (req, res) => {
   });
 });
 
+// Get friend list (Author: Muhammad)
+app.get("/friends", authenticateToken, (req, res) => {
+  const contact = contactsDB.find((c) => c.phoneNumber === req.user.phoneNumber);
+  if (!contact) {
+    return res.status(404).json({ message: "Contact not found." });
+  }
+
+  const friends = (contact.friends || []).map((f) => ({
+    id: f.id,
+    name: f.name,
+    email: f.email,
+    address: f.address,
+  }));
+
+  return res.status(200).json({ friends });
+});
+
 // GET FRIEND DETAILS
 app.get("/friends/:friendId", authenticateToken, (req, res) => {
   const { friendId } = req.params;
@@ -254,6 +271,15 @@ app.post("/search", authenticateToken, (req, res) => {
   }));
 
   return res.status(200).json({ results });
+});
+
+// PRE-FILL CHECKOUT
+app.post("/pre-fill-checkout", (req, res) => {
+  const { contact } = req.body;
+  
+  console.log("📦 Received contact:", contact);
+
+  res.json({ message: "pre-fill-checkout received", contact });
 });
 
 // PROFILE
