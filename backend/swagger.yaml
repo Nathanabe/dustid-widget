@@ -70,6 +70,24 @@ paths:
               schema:
                 type: string
 
+  /api/auth:
+    get:
+      summary: Shopify auth start
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: embedded
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to Shopify authorization
+
   /verify:
     post:
       summary: Generate OTP
