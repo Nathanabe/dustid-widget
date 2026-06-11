@@ -62,6 +62,55 @@ paths:
     get:
       summary: Home route
       description: Basic check if API is running
+      parameters:
+        - name: embedded
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Shopify embedded app indicator
+        - name: hmac
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Shopify HMAC signature
+        - name: host
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Shopify embedded app host value
+        - name: id_token
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Shopify ID token for embedded apps
+        - name: locale
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Locale sent by Shopify
+        - name: session
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Shopify session token identifier
+        - name: shop
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: timestamp
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Shopify timestamp
       responses:
         '200':
           description: Welcome page
