@@ -420,3 +420,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Message'
+  /api/draft-order:
+    post:
+      summary: Create a draft order for gift checkout
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - shop
+                  - items
+                  - contact
+                properties:
+                  shop:
+                    type: string
+                    example: "dustid-shop.myshopify.com"
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        variant_id:
+                          type: integer
+                        quantity:
+                          type: integer
+                  contact:
+                    $ref: '#/components/schemas/Friend'
+        responses:
+          '200':
+            description: Draft order created
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    invoice_url:
+                      type: string
+                    message:
+                      type: string
+          '400':
+            description: Missing required fields
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Message'

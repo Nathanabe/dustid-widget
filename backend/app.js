@@ -321,6 +321,22 @@ app.post("/pre-fill-checkout", (req, res) => {
   res.json({ message: "pre-fill-checkout received", contact });
 });
 
+// DRAFT ORDER
+app.post("/api/draft-order", (req, res) => {
+  const { shop, items, contact } = req.body;
+
+  if (!shop || !items || !contact) {
+    return res.status(400).json({ message: "Missing required fields." });
+  }
+
+  const fakeInvoiceUrl = `https://${shop}/cart`;
+
+  return res.status(200).json({
+    invoice_url: fakeInvoiceUrl,
+    message: "Draft order created successfully.",
+  });
+});
+
 // PROFILE
 app.post("/profile", (req, res) => {
   const { phoneNumber } = req.body;
