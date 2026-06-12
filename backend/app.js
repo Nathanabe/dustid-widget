@@ -321,19 +321,92 @@ app.post("/pre-fill-checkout", (req, res) => {
   res.json({ message: "pre-fill-checkout received", contact });
 });
 
+function buildShopifyCheckoutUrl(shop, items, contact) {
+  const rawShop = String(shop || "").trim();
+  if (!rawShop) return null;
+
+  let domain = rawShop.toLowerCase();
+  const shopDomainPattern = /^[a-z0-9][a-z0-9-.]*$/;
+
+  if (!domain.endsWith(".myshopify.com")) {
+    if (!shopDomainPattern.test(domain)) return null;
+    domain = `${domain}.myshopify.com`;
+  }
+
+  const lineItems = (items || [])
+    .filter((item) => Number.isFinite(item?.variant_id) && Number.isFinite(item?.quantity) && item.quantity > 0)
+    .map((item) => `${encodeURIComponent(item.variant_id)}:${encodeURIComponent(item.quantity)}`)
+    .join(",");
+
+  if (!lineItems) return null;
+
+  const [firstName, ...nameParts] = String(contact?.name || "").trim().split(" ");
+  const lastName = nameParts.join(" ");
+  const address = contact?.address || {};
+
+  const params = new URLSearchParams();
+  if (contact?.email) params.set("checkout[email]", String(contact.email));
+  if (firstName) params.set("checkout[shipping_address][first_name]", firstName);
+  if (lastName) params.set("checkout[shipping_address][last_name]", lastName || String(contact.name));
+  if (address.address1 || address.street || address.line1) {
+    params.set(
+      "checkout[shipping_address][address1]",
+      String(address.address1 || address.street || address.line1),
+    );
+  }
+  if (address.address2 || address.line2) {
+    params.set(
+      "checkout[shipping_address][address2]",
+      String(address.address2 || address.line2),
+    );
+  }
+  if (address.city) params.set("checkout[shipping_address][city]", String(address.city));
+  if (address.province || address.state) {
+    params.set(
+      "checkout[shipping_address][province]",
+      String(address.province || address.state),
+    );
+  }
+  if (address.zip || address.postal_code || address.postcode) {
+    params.set(
+      "checkout[shipping_address][zip]",
+      String(address.zip || address.postal_code || address.postcode),
+    );
+  }
+  if (address.country_code) {
+    params.set("checkout[shipping_address][country_code]", String(address.country_code));
+  } else if (address.country) {
+    params.set("checkout[shipping_address][country]", String(address.country));
+  }
+  if (address.phone || contact?.phone) {
+    params.set("checkout[shipping_address][phone]", String(address.phone || contact.phone));
+  }
+  if (address.company) {
+    params.set("checkout[shipping_address][company]", String(address.company));
+  }
+
+  const query = params.toString();
+  return `https://${domain}/cart/${lineItems}${query ? `?${query}` : ""}`;
+}
+
 // DRAFT ORDER
 app.post("/api/draft-order", (req, res) => {
   const { shop, items, contact } = req.body;
 
-  if (!shop || !items || !contact) {
-    return res.status(400).json({ message: "Missing required fields." });
+  if (!shop || !items || !contact || !contact.name) {
+    return res.status(400).json({ message: "Missing required fields: shop, items, contact.name." });
   }
 
-  const fakeInvoiceUrl = `https://${shop}/cart`;
+  const checkoutUrl = buildShopifyCheckoutUrl(shop, items, contact);
+  if (!checkoutUrl) {
+    return res.status(400).json({ message: "Unable to build Shopify checkout URL from request payload." });
+  }
+
+  console.log("[dustid] Built Shopify checkout URL:", checkoutUrl);
 
   return res.status(200).json({
-    invoice_url: fakeInvoiceUrl,
-    message: "Draft order created successfully.",
+    invoice_url: checkoutUrl,
+    message: "Shopify checkout URL created successfully.",
   });
 });
 

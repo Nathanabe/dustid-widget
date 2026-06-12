@@ -450,7 +450,7 @@ paths:
                   $ref: '#/components/schemas/Friend'
       responses:
         '200':
-          description: Draft order created
+          description: Shopify checkout URL created successfully.
           content:
             application/json:
               schema:
@@ -461,7 +461,7 @@ paths:
                   message:
                     type: string
         '400':
-          description: Missing required fields
+          description: Unable to build Shopify checkout URL from request payload.
           content:
             application/json:
               schema:
