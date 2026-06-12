@@ -321,7 +321,7 @@ app.post("/pre-fill-checkout", (req, res) => {
   res.json({ message: "pre-fill-checkout received", contact });
 });
 
-function buildShopifyCheckoutUrl(shop, items, contact) {
+function buildShopifyCheckoutUrl(shop, contact) {
   const rawShop = String(shop || "").trim();
   if (!rawShop) return null;
 
@@ -332,13 +332,6 @@ function buildShopifyCheckoutUrl(shop, items, contact) {
     if (!shopDomainPattern.test(domain)) return null;
     domain = `${domain}.myshopify.com`;
   }
-
-  const lineItems = (items || [])
-    .filter((item) => Number.isFinite(item?.variant_id) && Number.isFinite(item?.quantity) && item.quantity > 0)
-    .map((item) => `${encodeURIComponent(item.variant_id)}:${encodeURIComponent(item.quantity)}`)
-    .join(",");
-
-  if (!lineItems) return null;
 
   const [firstName, ...nameParts] = String(contact?.name || "").trim().split(" ");
   const lastName = nameParts.join(" ");
@@ -386,18 +379,18 @@ function buildShopifyCheckoutUrl(shop, items, contact) {
   }
 
   const query = params.toString();
-  return `https://${domain}/cart/${lineItems}${query ? `?${query}` : ""}`;
+  return `https://${domain}/checkout${query ? `?${query}` : ""}`;
 }
 
 // DRAFT ORDER
 app.post("/api/draft-order", (req, res) => {
-  const { shop, items, contact } = req.body;
+  const { shop, contact } = req.body;
 
-  if (!shop || !items || !contact || !contact.name) {
-    return res.status(400).json({ message: "Missing required fields: shop, items, contact.name." });
+  if (!shop || !contact || !contact.name) {
+    return res.status(400).json({ message: "Missing required fields: shop, contact.name." });
   }
 
-  const checkoutUrl = buildShopifyCheckoutUrl(shop, items, contact);
+  const checkoutUrl = buildShopifyCheckoutUrl(shop, contact);
   if (!checkoutUrl) {
     return res.status(400).json({ message: "Unable to build Shopify checkout URL from request payload." });
   }
