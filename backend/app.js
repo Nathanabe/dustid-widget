@@ -383,24 +383,63 @@ function buildShopifyCheckoutUrl(shop, contact) {
 }
 
 // DRAFT ORDER
-app.post("/api/draft-order", (req, res) => {
-  const { shop, contact } = req.body;
+// DRAFT ORDER
+app.post("/api/draft-order", async (req, res) => {
+  const { shop, items, contact } = req.body;
 
-  if (!shop || !contact || !contact.name) {
-    return res.status(400).json({ message: "Missing required fields: shop, contact.name." });
+  if (!shop || !items || !contact) {
+    return res.status(400).json({ message: "Missing required fields." });
   }
 
-  const checkoutUrl = buildShopifyCheckoutUrl(shop, contact);
-  if (!checkoutUrl) {
-    return res.status(400).json({ message: "Unable to build Shopify checkout URL from request payload." });
+  const accessToken = process.env.SHOPIFY_ACCESS_TOKEN;
+
+  if (!accessToken) {
+    return res.status(500).json({ message: "Shopify access token not configured." });
   }
 
-  console.log("[dustid] Built Shopify checkout URL:", checkoutUrl);
+  try {
+    const response = await fetch(`https://${shop}/admin/api/2024-01/draft_orders.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": accessToken,
+      },
+      body: JSON.stringify({
+        draft_order: {
+          line_items: items.map((item) => ({
+            variant_id: item.variant_id,
+            quantity: item.quantity,
+          })),
+          shipping_address: {
+            first_name: contact.address?.first_name,
+            last_name: contact.address?.last_name,
+            address1: contact.address?.address1,
+            city: contact.address?.city,
+            province: contact.address?.province,
+            zip: contact.address?.zip,
+            country: contact.address?.country,
+            phone: contact.address?.phone,
+          },
+        },
+      }),
+    });
 
-  return res.status(200).json({
-    invoice_url: checkoutUrl,
-    message: "Shopify checkout URL created successfully.",
-  });
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("[dustid] Shopify draft order error:", data);
+      return res.status(500).json({ message: "Failed to create draft order.", error: data });
+    }
+
+    return res.status(200).json({
+      invoice_url: data.draft_order.invoice_url,
+      message: "Draft order created successfully.",
+    });
+
+  } catch (err) {
+    console.error("[dustid] Draft order exception:", err);
+    return res.status(500).json({ message: "Internal server error." });
+  }
 });
 
 // PROFILE
