@@ -370,6 +370,9 @@ app.post("/api/draft-order", async (req, res) => {
   }
 
   try {
+    const shippingAddress = contact?.delivery_address || contact?.shipping_address || contact?.address || {};
+    const billingAddress = contact?.billing_address || contact?.billingAddress || null;
+
     const response = await fetch(`https://${shop}/admin/api/2024-01/draft_orders.json`, {
       method: "POST",
       headers: {
@@ -383,14 +386,28 @@ app.post("/api/draft-order", async (req, res) => {
             quantity: item.quantity,
           })),
           shipping_address: {
-            first_name: contact.address?.first_name,
-            last_name: contact.address?.last_name,
-            address1: contact.address?.address1,
-            city: contact.address?.city,
-            province: contact.address?.province,
-            zip: contact.address?.zip,
-            country: contact.address?.country,
-            phone: contact.address?.phone,
+            first_name: shippingAddress.first_name,
+            last_name: shippingAddress.last_name,
+            address1: shippingAddress.address1,
+            address2: shippingAddress.address2,
+            city: shippingAddress.city,
+            province: shippingAddress.province,
+            zip: shippingAddress.zip,
+            country: shippingAddress.country,
+            country_code: shippingAddress.country_code,
+            phone: shippingAddress.phone,
+          },
+          billing_address: {
+            first_name: billingAddress.first_name,
+            last_name: billingAddress.last_name,
+            address1: billingAddress.address1,
+            address2: billingAddress.address2,
+            city: billingAddress.city,
+            province: billingAddress.province,
+            zip: billingAddress.zip,
+            country: billingAddress.country,
+            country_code: billingAddress.country_code,
+            phone: billingAddress.phone,
           },
         },
       }),
