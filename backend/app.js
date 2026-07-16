@@ -294,6 +294,31 @@ app.post("/pre-fill-checkout", (req, res) => {
   res.json({ message: "pre-fill-checkout received", contact });
 });
 
+function buildAddressPayload(addressLike = {}, fallbackName = "") {
+  const address = addressLike || {};
+  const [firstName, ...restParts] = String(
+    address.first_name || address.firstName || fallbackName || ""
+  )
+    .trim()
+    .split(/\s+/);
+  const lastName = String(
+    address.last_name || address.lastName || restParts.join(" ") || ""
+  ).trim();
+
+  return {
+    first_name: firstName || "",
+    last_name: lastName || "",
+    address1: address.address1 || address.address || address.street || address.line1 || "",
+    address2: address.address2 || address.line2 || "",
+    city: address.city || "",
+    province: address.province || address.state || "",
+    zip: address.zip || address.postal_code || address.postcode || "",
+    country: address.country || "",
+    country_code: address.country_code || address.countryCode || "",
+    phone: address.phone || "",
+  };
+}
+
 function buildShopifyCheckoutUrl(shop, contact) {
   const rawShop = String(shop || "").trim();
   if (!rawShop) return null;
@@ -356,9 +381,10 @@ function buildShopifyCheckoutUrl(shop, contact) {
 }
 
 // DRAFT ORDER
-app.post("/api/draft-order", async (req, res) => {
+app.post("/api/draft-order", authenticateToken, async (req, res) => {
   const { shop, items, contact } = req.body;
-
+  console.log(`user body: ${JSON.stringify(req.user)}`);
+  console.log(`contact: ${JSON.stringify(contact)}`);
   if (!shop || !items || !contact) {
     return res.status(400).json({ message: "Missing required fields." });
   }
@@ -370,9 +396,32 @@ app.post("/api/draft-order", async (req, res) => {
   }
 
   try {
-    const shippingAddress = contact?.delivery_address || contact?.shipping_address || contact?.address || {};
-    const billingAddress = contact?.billing_address || contact?.billingAddress || null;
+    const authContact = req.user?.phoneNumber
+      ? contactsDB.find((entry) => entry.phoneNumber === req.user.phoneNumber)
+      : null;
+    const selectedContact = contact || authContact || {};
+    const senderContact = authContact || {};
+    const shippingAddressSource =
+      selectedContact?.delivery_address ||
+      selectedContact?.shipping_address ||
+      selectedContact?.address ||
+      {};
+    const billingAddressSource =
+      req.body?.billing_address ||
+      req.body?.billingAddress ||
+      senderContact?.billing_address ||
+      senderContact?.billingAddress ||
+      senderContact?.delivery_address ||
+      senderContact?.shipping_address ||
+      senderContact?.address ||
+      {};
 
+    const shippingAddress = buildAddressPayload(shippingAddressSource, selectedContact?.name || "");
+    const billingAddress = buildAddressPayload(billingAddressSource, senderContact?.name || selectedContact?.name || "");
+    const hasBillingAddress = Object.values(billingAddress).some((value) => String(value || "").trim() !== "");
+
+    console.log(`Shipping Address: ${JSON.stringify(shippingAddress)}`);
+    console.log(`Billing Address: ${JSON.stringify(billingAddress)}`);
     const response = await fetch(`https://${shop}/admin/api/2024-01/draft_orders.json`, {
       method: "POST",
       headers: {
@@ -385,30 +434,10 @@ app.post("/api/draft-order", async (req, res) => {
             variant_id: item.variant_id,
             quantity: item.quantity,
           })),
-          shipping_address: {
-            first_name: shippingAddress.first_name,
-            last_name: shippingAddress.last_name,
-            address1: shippingAddress.address1,
-            address2: shippingAddress.address2,
-            city: shippingAddress.city,
-            province: shippingAddress.province,
-            zip: shippingAddress.zip,
-            country: shippingAddress.country,
-            country_code: shippingAddress.country_code,
-            phone: shippingAddress.phone,
-          },
-          billing_address: {
-            first_name: billingAddress.first_name,
-            last_name: billingAddress.last_name,
-            address1: billingAddress.address1,
-            address2: billingAddress.address2,
-            city: billingAddress.city,
-            province: billingAddress.province,
-            zip: billingAddress.zip,
-            country: billingAddress.country,
-            country_code: billingAddress.country_code,
-            phone: billingAddress.phone,
-          },
+          shipping_address: shippingAddress,
+          ...(hasBillingAddress ? { billing_address: billingAddress } : {}),
+          note: `Dustid gift for ${selectedContact?.name || "customer"}`,
+          tags: "dustid-gift",
         },
       }),
     });
@@ -424,7 +453,7 @@ app.post("/api/draft-order", async (req, res) => {
       invoice_url: data.draft_order.invoice_url,
       message: "Draft order created successfully.",
     });
-
+    console.log("[dustid] Draft order created successfully:", data);
   } catch (err) {
     console.error("[dustid] Draft order exception:", err);
     return res.status(500).json({ message: "Internal server error." });
