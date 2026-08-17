@@ -186,10 +186,16 @@ app.post("/validate-otp", (req, res) => {
     (entry) => entry.phoneNumber === phoneNumber
   );
 
+  const contact = contactsDB.find((entry) => entry.phoneNumber === phoneNumber);
+  const firstName =
+    contact?.billing_address?.first_name ||
+    contact?.name?.trim().split(/\s+/)[0] ||
+    "";
+
   // For demo purposes, we skip actual OTP validation
   if (record /*&& record.otp === otp*/) {
     const token = jwt.sign(
-      { phoneNumber },
+      { phoneNumber, firstName },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -197,11 +203,18 @@ app.post("/validate-otp", (req, res) => {
     return res.status(200).json({
       message: "OTP validated successfully.",
       token,
+      firstName,
     });
   }
 
   return res.status(401).json({
     message: "Invalid OTP.",
+  });
+});
+
+app.post("/logout", authenticateToken, (req, res) => {
+  return res.status(200).json({
+    message: "Logged out successfully.",
   });
 });
 
@@ -318,7 +331,7 @@ function buildAddressPayload(addressLike = {}, fallbackName = "") {
     phone: address.phone || "",
   };
 }
-
+/*
 function buildShopifyCheckoutUrl(shop, contact) {
   const rawShop = String(shop || "").trim();
   if (!rawShop) return null;
@@ -379,7 +392,7 @@ function buildShopifyCheckoutUrl(shop, contact) {
   const query = params.toString();
   return `https://${domain}/checkout${query ? `?${query}` : ""}`;
 }
-
+*/
 // DRAFT ORDER
 app.post("/api/draft-order", authenticateToken, async (req, res) => {
   const { shop, items, contact } = req.body;
@@ -438,6 +451,7 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
           ...(hasBillingAddress ? { billing_address: billingAddress } : {}),
           note: `Dustid gift for ${selectedContact?.name || "customer"}`,
           tags: "dustid-gift",
+          //email: hasBillingAddress ? selectedContact?.email || senderContact?.email || "" : "",
         },
       }),
     });
