@@ -393,6 +393,50 @@ function buildShopifyCheckoutUrl(shop, contact) {
   return `https://${domain}/checkout${query ? `?${query}` : ""}`;
 }
 */
+
+function normalizeShopifyPhone(phone) {
+  if (!phone) return null;
+
+  const value = String(phone).trim();
+
+  return value.startsWith("+") ? value : `+${value}`;
+}
+
+function toShopifyVariantGid(variantId) {
+  if (!variantId) return null;
+
+  const value = String(variantId);
+
+  return value.startsWith("gid://shopify/ProductVariant/")
+    ? value
+    : `gid://shopify/ProductVariant/${value}`;
+}
+
+function toGraphQLAddress(address = {}) {
+  const result = {
+    firstName: address.first_name || undefined,
+    lastName: address.last_name || undefined,
+    address1: address.address1 || undefined,
+    address2: address.address2 || undefined,
+    city: address.city || undefined,
+    zip: address.zip || undefined,
+    phone: normalizeShopifyPhone(address.phone),
+  };
+
+ if (address.country_code || address.countryCode) {
+  result.countryCode = address.country_code || address.countryCode;
+} else if (address.country) {
+  result.country = address.country;
+}
+
+if (address.province_code || address.provinceCode) {
+  result.provinceCode = address.province_code || address.provinceCode;
+} else if (address.province) {
+  result.province = address.province;
+}
+
+  return result;
+}
 // DRAFT ORDER
 app.post("/api/draft-order", authenticateToken, async (req, res) => {
   const { shop, items, contact } = req.body;
@@ -435,39 +479,106 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
 
     console.log(`Shipping Address: ${JSON.stringify(shippingAddress)}`);
     console.log(`Billing Address: ${JSON.stringify(billingAddress)}`);
-    const response = await fetch(`https://${shop}/admin/api/2024-01/draft_orders.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": accessToken,
-      },
-      body: JSON.stringify({
-        draft_order: {
-          line_items: items.map((item) => ({
-            variant_id: item.variant_id,
-            quantity: item.quantity,
-          })),
-          shipping_address: shippingAddress,
-          ...(hasBillingAddress ? { billing_address: billingAddress } : {}),
-          note: `Dustid gift for ${selectedContact?.name || "customer"}`,
-          tags: "dustid-gift",
-          //email: hasBillingAddress ? selectedContact?.email || senderContact?.email || "" : "",
-        },
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("[dustid] Shopify draft order error:", data);
-      return res.status(500).json({ message: "Failed to create draft order.", error: data });
+const mutation = `
+  mutation draftOrderCreate($input: DraftOrderInput!) {
+    draftOrderCreate(input: $input) {
+      draftOrder {
+        id
+        name
+        email
+        phone
+        invoiceUrl
+        billingAddress {
+          firstName
+          lastName
+          phone
+          address1
+        }
+        shippingAddress {
+          firstName
+          lastName
+          phone
+          address1
+        }
+      }
+      userErrors {
+        field
+        message
+      }
     }
+  }
+`;
 
-    return res.status(200).json({
-      invoice_url: data.draft_order.invoice_url,
-      message: "Draft order created successfully.",
-    });
-    console.log("[dustid] Draft order created successfully:", data);
+const input = {
+  phone: normalizeShopifyPhone(senderContact?.phoneNumber),
+
+  lineItems: items.map((item) => ({
+    variantId: toShopifyVariantGid(item.variant_id),
+    quantity: item.quantity,
+  })),
+
+  shippingAddress: toGraphQLAddress(shippingAddress),
+
+  ...(hasBillingAddress
+    ? { billingAddress: toGraphQLAddress(billingAddress) }
+    : {}),
+
+  note: `Dustid gift for ${selectedContact?.name || "customer"}`,
+  tags: ["dustid-gift"],
+};
+
+const response = await fetch(
+  `https://${shop}/admin/api/2026-07/graphql.json`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": accessToken,
+    },
+    body: JSON.stringify({
+      query: mutation,
+      variables: { input },
+    }),
+  }
+);
+
+const data = await response.json();
+
+if (!response.ok || data.errors) {
+  console.error("[dustid] Shopify GraphQL error:", data);
+
+  return res.status(500).json({
+    message: "Failed to create draft order.",
+    error: data,
+  });
+}
+
+const result = data?.data?.draftOrderCreate;
+
+if (
+  result?.userErrors?.length ||
+  !result?.draftOrder?.invoiceUrl
+) {
+  console.error(
+    "[dustid] Shopify draft order user errors:",
+    result?.userErrors
+  );
+
+  return res.status(500).json({
+    message: "Failed to create draft order.",
+    error: result?.userErrors || [],
+  });
+}
+
+console.log(
+  "[dustid] Draft order created successfully:",
+  result.draftOrder.id
+);
+
+return res.status(200).json({
+  invoice_url: result.draftOrder.invoiceUrl,
+  message: "Draft order created successfully.",
+});
   } catch (err) {
     console.error("[dustid] Draft order exception:", err);
     return res.status(500).json({ message: "Internal server error." });
