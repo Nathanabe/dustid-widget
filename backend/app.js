@@ -484,22 +484,7 @@ const mutation = `
     draftOrderCreate(input: $input) {
       draftOrder {
         id
-        name
-        email
-        phone
         invoiceUrl
-        billingAddress {
-          firstName
-          lastName
-          phone
-          address1
-        }
-        shippingAddress {
-          firstName
-          lastName
-          phone
-          address1
-        }
       }
       userErrors {
         field
