@@ -39,6 +39,8 @@ components:
           type: string
         country:
           type: string
+        country_code:
+          type: string
         first_name:
           type: string
         last_name:
@@ -53,6 +55,8 @@ components:
         name:
           type: string
         email:
+          type: string
+        phone:
           type: string
         address:
           $ref: '#/components/schemas/Address'
@@ -404,6 +408,8 @@ paths:
                         type: string
                       name:
                         type: string
+                      billing_address:
+                        $ref: '#/components/schemas/Address'
                       friends:
                         type: array
                         items:
