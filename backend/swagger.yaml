@@ -5,7 +5,7 @@ info:
   description: Simple mock API for OTP verification and contact lookup.
 
 servers:
-  - url: https://dustid-backend-latest.onrender.com/
+  - url: https://dustid-backend-latest-kg5d.onrender.com/
     description: Staging server
   - url: https://localhost:5000/
     description: Local development server (Port 5000)
