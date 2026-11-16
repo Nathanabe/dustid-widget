@@ -10,6 +10,7 @@ import OpenApiValidator from "express-openapi-validator";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { authenticateToken } from "./middleware/auth.js";
+import { getSharedFriend } from "./mock-permissions.js";
 
 dotenv.config();
 
@@ -218,6 +219,17 @@ app.post("/logout", authenticateToken, (req, res) => {
   });
 });
 
+function sharedFriendSummaries(contact) {
+  return (contact.friends || [])
+    .filter((friend) => getSharedFriend(contact, friend.id))
+    .map((friend) => ({
+      id: friend.id,
+      name: friend.name,
+      email: friend.email,
+      phone: friend.address?.phone,
+    }));
+}
+
 // Get friend list (Author: Muhammad)
 app.get("/friends", authenticateToken, (req, res) => {
   const contact = contactsDB.find((c) => c.phoneNumber === req.user.phoneNumber);
@@ -225,13 +237,7 @@ app.get("/friends", authenticateToken, (req, res) => {
     return res.status(404).json({ message: "Contact not found." });
   }
 
-  const friends = (contact.friends || []).map((f) => ({
-    id: f.id,
-    name: f.name,
-    email: f.email,
-    phone: f.address?.phone,
-    address: f.address,
-  }));
+  const friends = sharedFriendSummaries(contact);
 
   return res.status(200).json({ friends });
 });
@@ -250,14 +256,11 @@ app.get("/friends/:friendId", authenticateToken, (req, res) => {
     });
   }
 
-  const friend = contact.friends.find(
-    (f) => f.id === friendId
-  );
+  const friend = getSharedFriend(contact, friendId);
 
   if (!friend) {
     return res.status(403).json({
-      message:
-        "Cannot access details of users who are not in your friend list.",
+      message: "Recipient address is not shared with you.",
     });
   }
 
@@ -272,10 +275,10 @@ app.get("/friends/:friendId", authenticateToken, (req, res) => {
 
 // SEARCH FRIENDS
 app.post("/search", authenticateToken, (req, res) => {
-  const { phoneNumber, query } = req.body;
+  const { query } = req.body;
 
   const contact = contactsDB.find(
-    (contact) => contact.phoneNumber === phoneNumber
+    (contact) => contact.phoneNumber === req.user.phoneNumber
   );
 
   if (!contact) {
@@ -284,7 +287,7 @@ app.post("/search", authenticateToken, (req, res) => {
     });
   }
 
-  const friends = contact.friends || [];
+  const friends = sharedFriendSummaries(contact);
 
   const q = query?.toString().trim().toLowerCase();
 
@@ -308,8 +311,6 @@ app.post("/search", authenticateToken, (req, res) => {
 // PRE-FILL CHECKOUT
 app.post("/pre-fill-checkout", (req, res) => {
   const { contact } = req.body;
-
-  console.log("📦 Received contact:", contact);
 
   res.json({ message: "pre-fill-checkout received", contact });
 });
@@ -465,10 +466,16 @@ function toGraphQLAddress(address = {}) {
 // DRAFT ORDER
 app.post("/api/draft-order", authenticateToken, async (req, res) => {
   const { shop, items, contact } = req.body;
-  console.log(`user body: ${JSON.stringify(req.user)}`);
-  console.log(`contact: ${JSON.stringify(contact)}`);
   if (!shop || !items || !contact) {
     return res.status(400).json({ message: "Missing required fields." });
+  }
+
+  const authContact = contactsDB.find(
+    (entry) => entry.phoneNumber === req.user.phoneNumber
+  );
+  const selectedContact = getSharedFriend(authContact, contact.id);
+  if (!selectedContact) {
+    return res.status(403).json({ message: "Recipient address is not shared with you." });
   }
 
   const accessToken = process.env.SHOPIFY_ACCESS_TOKEN;
@@ -478,19 +485,14 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
   }
 
   try {
-    const authContact = req.user?.phoneNumber
-      ? contactsDB.find((entry) => entry.phoneNumber === req.user.phoneNumber)
-      : null;
-    const selectedContact = contact || authContact || {};
-    const senderContact = authContact || {};
+    // Resolve both addresses from mock data; client contact fields are untrusted.
+    const senderContact = authContact;
     const shippingAddressSource =
       selectedContact?.delivery_address ||
       selectedContact?.shipping_address ||
       selectedContact?.address ||
       {};
     const billingAddressSource =
-      req.body?.billing_address ||
-      req.body?.billingAddress ||
       senderContact?.billing_address ||
       senderContact?.billingAddress ||
       senderContact?.delivery_address ||
@@ -528,8 +530,6 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
       (value) => String(value || "").trim() !== ""
     );
 
-    console.log(`Shipping Address: ${JSON.stringify(shippingAddress)}`);
-    console.log(`Billing Address: ${JSON.stringify(billingAddress)}`);
     const mutation = `
   mutation draftOrderCreate($input: DraftOrderInput!) {
     draftOrderCreate(input: $input) {
@@ -581,11 +581,10 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
     const data = await response.json();
 
     if (!response.ok || data.errors) {
-      console.error("[dustid] Shopify GraphQL error:", data);
+      console.error("[dustid] Shopify GraphQL request failed.");
 
       return res.status(500).json({
         message: "Failed to create draft order.",
-        error: data,
       });
     }
 
@@ -595,14 +594,10 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
       result?.userErrors?.length ||
       !result?.draftOrder?.invoiceUrl
     ) {
-      console.error(
-        "[dustid] Shopify draft order user errors:",
-        result?.userErrors
-      );
+      console.error("[dustid] Shopify draft order was rejected.");
 
       return res.status(500).json({
         message: "Failed to create draft order.",
-        error: result?.userErrors || [],
       });
     }
 
@@ -615,15 +610,19 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
       invoice_url: result.draftOrder.invoiceUrl,
       message: "Draft order created successfully.",
     });
-  } catch (err) {
-    console.error("[dustid] Draft order exception:", err);
+  } catch {
+    console.error("[dustid] Draft order request failed.");
     return res.status(500).json({ message: "Internal server error." });
   }
 });
 
 // PROFILE
-app.post("/profile", (req, res) => {
+app.post("/profile", authenticateToken, (req, res) => {
   const { phoneNumber } = req.body;
+
+  if (phoneNumber !== req.user.phoneNumber) {
+    return res.status(403).json({ message: "Cannot access another buyer's profile." });
+  }
 
   const contact = contactsDB.find(
     (c) => c.phoneNumber === phoneNumber
@@ -635,7 +634,9 @@ app.post("/profile", (req, res) => {
     });
   }
 
-  return res.status(200).json({ contact });
+  return res.status(200).json({
+    contact: { ...contact, friends: sharedFriendSummaries(contact) },
+  });
 });
 
 // Global error handler
@@ -655,6 +656,58 @@ app.use((err, req, res, next) => {
 });
 
 const otpStore = []; // temporary in-memory OTP storage
+
+// Synthetic UK fixtures only; addresses/postcodes are test values, not delivery data.
+const ukFriends = [
+  {
+    id: "uk-friend001",
+    name: "Robin Example",
+    email: "robin@example.com",
+    address: {
+      first_name: "Robin",
+      last_name: "Example",
+      address1: "1 Fictional Test Close",
+      city: "London",
+      province: "Greater London",
+      zip: "SW1A 0ZZ",
+      country: "United Kingdom",
+      country_code: "GB",
+      phone: "447700900101",
+    },
+  },
+  {
+    id: "uk-friend002",
+    name: "Taylor Sample",
+    email: "taylor@example.com",
+    address: {
+      first_name: "Taylor",
+      last_name: "Sample",
+      address1: "2 Imaginary Demo Lane",
+      city: "Leeds",
+      province: "West Yorkshire",
+      zip: "LS1 0ZZ",
+      country: "United Kingdom",
+      country_code: "GB",
+      phone: "447700900102",
+    },
+  },
+  {
+    id: "uk-friend003",
+    name: "Morgan Example",
+    email: "morgan@example.com",
+    address: {
+      first_name: "Morgan",
+      last_name: "Example",
+      address1: "3 Pretend Sample Road",
+      city: "Manchester",
+      province: "Greater Manchester",
+      zip: "M1 0ZZ",
+      country: "United Kingdom",
+      country_code: "GB",
+      phone: "447700900103",
+    },
+  },
+];
 
 const contactsDB = [
   {
@@ -1009,6 +1062,40 @@ const contactsDB = [
         },
       },
     ],
+  },
+  {
+    id: "uk-buyer001",
+    phoneNumber: "447700900001",
+    name: "Alex Sample",
+    billing_address: {
+      first_name: "Alex",
+      last_name: "Sample",
+      address1: "10 Fictional Test Close",
+      city: "London",
+      province: "Greater London",
+      zip: "SW1A 0ZZ",
+      country: "United Kingdom",
+      country_code: "GB",
+      phone: "447700900001",
+    },
+    friends: ukFriends,
+  },
+  {
+    id: "uk-buyer002",
+    phoneNumber: "447700900002",
+    name: "Casey Demo",
+    billing_address: {
+      first_name: "Casey",
+      last_name: "Demo",
+      address1: "20 Imaginary Demo Lane",
+      city: "Leeds",
+      province: "West Yorkshire",
+      zip: "LS1 0ZZ",
+      country: "United Kingdom",
+      country_code: "GB",
+      phone: "447700900002",
+    },
+    friends: ukFriends,
   },
 ];
 
