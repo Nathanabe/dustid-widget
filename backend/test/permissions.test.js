@@ -98,7 +98,7 @@ test("shared recipient details remain accessible", async () => {
   const result = await request("/friends/uk-friend001");
   assert.equal(result.status, 200);
   assert.equal(result.body.address.country_code, "GB");
-  assert.equal(result.body.address.zip, "SW1A 0ZZ");
+  assert.equal(result.body.address.zip, "SW1A 1AA");
 });
 
 for (const id of ["uk-friend002", "uk-friend003", "friend201", "unknown"]) {
@@ -144,7 +144,10 @@ test("search uses the token identity and ignores a spoofed legacy phone number",
 test("profile cannot bypass permissions or expose another buyer's data", async () => {
   const own = await request("/profile", { body: { phoneNumber: buyerPhone } });
   assert.equal(own.status, 200);
+  assert.equal(own.body.contact.phoneNumber, buyerPhone);
+  assert.equal(own.body.contact.email, "alex@example.com");
   assert.equal(own.body.contact.billing_address.first_name, "Alex");
+  assert.equal(own.body.contact.billing_address.phone, "442079460011");
   assert.deepEqual(own.body.contact.friends.map((friend) => friend.id), ["uk-friend001"]);
   assert.equal("address" in own.body.contact.friends[0], false);
   const other = await request("/profile", { body: { phoneNumber: otherBuyerPhone } });
@@ -152,26 +155,37 @@ test("profile cannot bypass permissions or expose another buyer's data", async (
   assert.equal("contact" in other.body, false);
 });
 
-test("draft orders ignore forged recipient and billing fields and preserve success format", async () => {
+test("draft orders use the authenticated buyer's phone instead of email, ignore forged fields and preserve success format", async () => {
   const forged = { address1: "CLIENT-OVERRIDE", first_name: "CLIENT-OVERRIDE" };
   const body = draftBody("uk-friend001");
   Object.assign(body.contact, {
-    name: "CLIENT-OVERRIDE", address: forged, delivery_address: forged,
-    shipping_address: forged, shared: true, buyerId: "uk-buyer002",
+    name: "CLIENT-OVERRIDE", email: "CLIENT-OVERRIDE@example.com", address: forged, delivery_address: forged,
+    shipping_address: forged, shared: true, buyerId: "uk-buyer002", checkoutPhoneNumber: "CLIENT-OVERRIDE",
   });
-  Object.assign(body, { billing_address: forged, billingAddress: forged, phoneNumber: otherBuyerPhone });
+  Object.assign(body, { email: "CLIENT-OVERRIDE@example.com", billing_address: forged, billingAddress: forged, phoneNumber: "254712345678", checkoutPhoneNumber: "CLIENT-OVERRIDE", buyerId: "contact001" });
   const result = await request("/api/draft-order", { body });
   assert.equal(result.status, 200);
   assert.deepEqual(result.body, {
     invoice_url: "https://example.com/test-invoice", message: "Draft order created successfully.",
   });
   const input = shopifyRequests.at(-1).variables.input;
+  assert.equal(Object.hasOwn(input, "email"), false);
   assert.equal(input.shippingAddress.address1, "1 Fictional Test Close");
   assert.equal(input.shippingAddress.firstName, "Robin");
   assert.equal(input.shippingAddress.countryCode, "GB");
   assert.equal(input.billingAddress.address1, "10 Fictional Test Close");
   assert.equal(input.billingAddress.firstName, "Alex");
-  assert.equal(input.phone, `+${buyerPhone}`);
+  assert.equal(input.billingAddress.lastName, "Sample");
+  assert.equal(input.phone, "+442079460001");
+  assert.notEqual(input.phone, `+${buyerPhone}`);
+  assert.equal(input.shippingAddress.phone, "+442079460101");
+  assert.equal(input.billingAddress.phone, "+442079460011");
+  assert.notEqual(input.phone, input.billingAddress.phone);
+  assert.notEqual(input.phone, input.shippingAddress.phone);
+  assert.equal(input.shippingAddress.zip, "SW1A 1AA");
+  assert.equal(input.billingAddress.zip, "SW1A 1AA");
+  assert.equal(input.shippingAddress.province, "England");
+  assert.equal(input.billingAddress.province, "England");
   assert.equal(JSON.stringify(input).includes("CLIENT-OVERRIDE"), false);
 });
 
@@ -203,7 +217,26 @@ test("draft order grants are buyer-specific and missing recipient IDs are reject
     phone: otherBuyerPhone, body: draftBody("uk-friend002"),
   });
   assert.equal(allowed.status, 200);
-  assert.equal(shopifyRequests.at(-1).variables.input.shippingAddress.firstName, "Taylor");
+  const input = shopifyRequests.at(-1).variables.input;
+  assert.equal(Object.hasOwn(input, "email"), false);
+  assert.equal(input.shippingAddress.firstName, "Taylor");
+  assert.equal(input.phone, "+441134960002");
+  assert.notEqual(input.phone, `+${otherBuyerPhone}`);
+  assert.equal(input.shippingAddress.phone, "+441134960102");
+  assert.equal(input.billingAddress.phone, "+441134960002");
+  assert.equal(input.shippingAddress.zip, "LS1 1UR");
+  assert.equal(input.billingAddress.zip, "LS1 1UR");
+  assert.equal(input.shippingAddress.province, "England");
+  assert.equal(input.billingAddress.province, "England");
+});
+
+test("spoofed UK buyer fields cannot replace a Kenyan buyer's Shopify contact details", async () => {
+  const phone = "254712345678";
+  const body = { ...draftBody("friend101"), buyerId: "uk-buyer001", phoneNumber: buyerPhone, email: "alex@example.com" };
+  const result = await request("/api/draft-order", { phone, body });
+  assert.equal(result.status, 200);
+  assert.equal(shopifyRequests.at(-1).variables.input.phone, `+${phone}`);
+  assert.equal(Object.hasOwn(shopifyRequests.at(-1).variables.input, "email"), false);
 });
 
 test("numeric recipient IDs are rejected before Shopify; stable string IDs still work", async () => {
@@ -234,6 +267,8 @@ test("all existing Kenyan friend grants still allow details and draft orders", a
       assert.equal(details.body.address.country, "Kenya");
       const order = await request("/api/draft-order", { phone, body: draftBody(id) });
       assert.equal(order.status, 200);
+      assert.equal(shopifyRequests.at(-1).variables.input.phone, `+${phone}`);
+      assert.equal(Object.hasOwn(shopifyRequests.at(-1).variables.input, "email"), false);
     }
   }
 });
@@ -268,11 +303,25 @@ test("draft-order failures return only safe messages without logging sensitive d
     status: 500, body: { message: "Failed to create draft order." },
   });
   fetchMock.mock.mockImplementation(async () => Response.json({
-    data: { draftOrderCreate: { userErrors: [{ message: "CLIENT-OVERRIDE" }] } },
+    data: { draftOrderCreate: { userErrors: [{ field: ["shippingAddress", "zip"], message: "CLIENT-OVERRIDE" }] } },
   }));
   assert.deepEqual(await request("/api/draft-order", { body: draftBody("uk-friend001") }), {
     status: 500, body: { message: "Failed to create draft order." },
   });
+  assert.deepEqual(console.error.mock.calls.at(-1).arguments, [
+    "[dustid] Shopify draft order was rejected.",
+    { fields: [["shippingAddress", "zip"]], missingInvoiceUrl: true },
+  ]);
+  fetchMock.mock.mockImplementation(async () => Response.json({
+    data: { draftOrderCreate: { userErrors: [], draftOrder: { id: "test-order" } } },
+  }));
+  assert.deepEqual(await request("/api/draft-order", { body: draftBody("uk-friend001") }), {
+    status: 500, body: { message: "Failed to create draft order." },
+  });
+  assert.deepEqual(console.error.mock.calls.at(-1).arguments, [
+    "[dustid] Shopify draft order was rejected.",
+    { fields: [], missingInvoiceUrl: true },
+  ]);
   fetchMock.mock.mockImplementation(async () => { throw new Error("CLIENT-OVERRIDE"); });
   assert.deepEqual(await request("/api/draft-order", { body: draftBody("uk-friend001") }), {
     status: 500, body: { message: "Internal server error." },
@@ -305,6 +354,7 @@ test("contact and draft-order requests do not log addresses, tokens or client pa
     "CLIENT-OVERRIDE", "Fictional Test Close", "Imaginary Demo Lane", "Pretend Sample Road",
     "Shipping Address", "Billing Address", "Generated OTP", process.env.JWT_SECRET,
     process.env.SHOPIFY_ACCESS_TOKEN,
+    "alex@example.com", "casey@example.com",
   ]) {
     assert.equal(output.includes(sensitive), false);
   }

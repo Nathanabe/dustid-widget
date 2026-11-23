@@ -13,9 +13,53 @@ These are static in-memory fixtures, with no persistence or permission-editing A
 
 ## Synthetic UK fixtures
 
-Names, emails, UK-style phone numbers, street addresses and postcode-format strings
-are synthetic test data, not delivery destinations. Login phone numbers use the
-existing digits-only international format (no `+`).
+Names, emails and street addresses are synthetic test data, not delivery destinations.
+Login phone numbers remain in the existing digits-only international format (no `+`).
+Address phones use the geographic drama ranges reserved by
+[Ofcom](https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbers-for-drama);
+these differ from the mobile login numbers. UK regions use `England`. Postcodes
+use published public-institution examples for [London](https://www.royal.uk/contact),
+[Leeds](https://www.leeds.gov.uk/licensing/alcohol-and-entertainment/premises-licence)
+and [Manchester](https://www.manchester.gov.uk/contact-us/location), with fictional
+street addresses.
+
+Draft orders use the authenticated buyer's server-side `checkoutPhoneNumber`,
+falling back to their login phone, normalized with a leading `+`. Shopify rejected
+Alex's synthetic mobile login number at the top-level `phone` field in the live
+checkout test on 2026-11-23. UK fixtures therefore use explicit geographic
+checkout contact numbers. Login/OTP/JWT numbers stay unchanged, and
+client-supplied contact-number overrides are ignored. No top-level
+`email` is sent, so UK buyers follow Alice's phone-based checkout flow. UK profile
+emails (`alex@example.com` and `casey@example.com`) remain in the mock data but are
+not used for the checkout contact. Buyer names remain in the billing address;
+shipping and billing address phones remain separate from the checkout contact.
+
+| Buyer | Login phone | Checkout contact | Billing phone |
+| --- | --- | --- | --- |
+| Alex Sample | 447700900001 | +442079460001 | +442079460011 |
+| Casey Demo | 447700900002 | +441134960002 | +441134960002 |
+
+Robin's shipping phone is `+442079460101`. Alex's contact, billing and recipient
+shipping phones are deliberately separate, as in Alice's fixture.
+
+Checkout contact names come from the Shopify customer profile. When preparing a
+new phone-only fixture, check that the Shopify profile has the buyer's name:
+Shopify can initially use the shipping recipient's name. The Alex phone-only
+profile in the current test store was corrected to Alex Sample with the owner's
+approval. This profile setup is not automated by the mock backend.
+
+### Validation and deployed version
+
+On 2026-11-23, a live `draftOrderCreate` call for Alex to Robin returned HTTP 200
+with an invoice URL. The store owner subsequently completed a new test checkout
+and confirmed Alex's contact `+442079460001`, billing `+442079460011`, and Robin's
+shipping `+442079460101` on the order confirmation page. The 25 backend tests also
+passed inside the `linux/amd64` Docker image; those tests mock Shopify calls.
+
+The Render service uses
+`dustidlite/dustid-backend:separate-billing-20261123`, with image index digest
+`sha256:9f333163cdd9c60085d6e2f83d426635462d350179c841c18b44ec8fd8d5f6f3`.
+Existing drafts retain their old data; create a fresh draft to test fixture changes.
 
 | Buyer phone | Recipient ID | State |
 | --- | --- | --- |
@@ -35,7 +79,8 @@ existing digits-only international format (no `+`).
   is optional and ignored, preserving existing callers.
 - `/api/draft-order` requires `contact.id`, checks sharing before resolving any
   address or calling Shopify, and ignores other client contact and billing address
-  fields. Shipping and billing come from server fixtures. Successful responses
+  fields, including client email. Shipping, billing and buyer contact phone come
+  from server fixtures. Successful responses
   retain `invoice_url` and `message`.
 - `/profile` now requires authentication and the buyer's own phone number; nested
   friends are shared summaries without addresses. This closes the existing
@@ -48,6 +93,10 @@ exception objects. No new OTP, token or address logging was added.
 
 ## Limitations and coordination with Nathan
 
+- When replacing fixtures with the Laravel API, resolve the authenticated buyer's
+  email and billing address separately from the authorized recipient's shipping
+  address. The API must supply a usable buyer email or phone for Contact prefill;
+  adding email to the mock does not connect Laravel.
 - OTP authentication and its middleware are unchanged. `/validate-otp` currently
   skips comparing the submitted OTP with the stored code. `/verify` logs generated
   OTPs, including in production. Anyone able to obtain a token for another mock

@@ -432,8 +432,14 @@ paths:
                         type: string
                       phoneNumber:
                         type: string
+                      checkoutPhoneNumber:
+                        type: string
+                        description: Optional server-side checkout contact phone, independent of the login and billing phones.
                       name:
                         type: string
+                      email:
+                        type: string
+                        format: email
                       billing_address:
                         $ref: '#/components/schemas/Address'
                       friends:
@@ -467,7 +473,7 @@ paths:
   /api/draft-order:
     post:
       summary: Create a draft order for gift checkout
-      description: Checks sharing for contact.id and the authenticated buyer before resolving addresses from server data. Other contact fields and client billing addresses are ignored.
+      description: Checks sharing for contact.id and the authenticated buyer before resolving addresses and the buyer's checkout contact phone from server data. The checkout phone falls back to the login phone when no separate number is configured. No contact email is sent to Shopify. Client phone and email overrides, other contact fields and client billing addresses are ignored.
       security:
         - bearerAuth: []
       requestBody:
