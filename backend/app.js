@@ -546,7 +546,10 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
 `;
 
     const input = {
-      phone: normalizeShopifyPhone(senderContact?.phoneNumber),
+      // Mock login numbers can differ from the buyer's Shopify contact number.
+      phone: normalizeShopifyPhone(
+        senderContact.checkoutPhoneNumber || senderContact.phoneNumber
+      ),
 
       lineItems: items.map((item) => ({
         variantId: toShopifyVariantGid(item.variant_id),
@@ -594,7 +597,10 @@ app.post("/api/draft-order", authenticateToken, async (req, res) => {
       result?.userErrors?.length ||
       !result?.draftOrder?.invoiceUrl
     ) {
-      console.error("[dustid] Shopify draft order was rejected.");
+      console.error("[dustid] Shopify draft order was rejected.", {
+        fields: result?.userErrors?.map(({ field }) => field ?? []) || [],
+        missingInvoiceUrl: !result?.draftOrder?.invoiceUrl,
+      });
 
       return res.status(500).json({
         message: "Failed to create draft order.",
@@ -668,11 +674,11 @@ const ukFriends = [
       last_name: "Example",
       address1: "1 Fictional Test Close",
       city: "London",
-      province: "Greater London",
-      zip: "SW1A 0ZZ",
+      province: "England",
+      zip: "SW1A 1AA",
       country: "United Kingdom",
       country_code: "GB",
-      phone: "447700900101",
+      phone: "442079460101",
     },
   },
   {
@@ -684,11 +690,11 @@ const ukFriends = [
       last_name: "Sample",
       address1: "2 Imaginary Demo Lane",
       city: "Leeds",
-      province: "West Yorkshire",
-      zip: "LS1 0ZZ",
+      province: "England",
+      zip: "LS1 1UR",
       country: "United Kingdom",
       country_code: "GB",
-      phone: "447700900102",
+      phone: "441134960102",
     },
   },
   {
@@ -700,11 +706,11 @@ const ukFriends = [
       last_name: "Example",
       address1: "3 Pretend Sample Road",
       city: "Manchester",
-      province: "Greater Manchester",
-      zip: "M1 0ZZ",
+      province: "England",
+      zip: "M60 2LA",
       country: "United Kingdom",
       country_code: "GB",
-      phone: "447700900103",
+      phone: "441614960103",
     },
   },
 ];
@@ -1066,34 +1072,38 @@ const contactsDB = [
   {
     id: "uk-buyer001",
     phoneNumber: "447700900001",
+    checkoutPhoneNumber: "442079460001",
     name: "Alex Sample",
+    email: "alex@example.com",
     billing_address: {
       first_name: "Alex",
       last_name: "Sample",
       address1: "10 Fictional Test Close",
       city: "London",
-      province: "Greater London",
-      zip: "SW1A 0ZZ",
+      province: "England",
+      zip: "SW1A 1AA",
       country: "United Kingdom",
       country_code: "GB",
-      phone: "447700900001",
+      phone: "442079460011",
     },
     friends: ukFriends,
   },
   {
     id: "uk-buyer002",
     phoneNumber: "447700900002",
+    checkoutPhoneNumber: "441134960002",
     name: "Casey Demo",
+    email: "casey@example.com",
     billing_address: {
       first_name: "Casey",
       last_name: "Demo",
       address1: "20 Imaginary Demo Lane",
       city: "Leeds",
-      province: "West Yorkshire",
-      zip: "LS1 0ZZ",
+      province: "England",
+      zip: "LS1 1UR",
       country: "United Kingdom",
       country_code: "GB",
-      phone: "447700900002",
+      phone: "441134960002",
     },
     friends: ukFriends,
   },
